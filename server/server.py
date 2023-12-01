@@ -5,11 +5,31 @@ import tqdm
 from database.Authentication import UserAuthentication
 
 HOST = '127.0.0.1'
-PORT = 40302
+PORT = 40303
+
+
+def handle_register_info(client_socket, u_email, u_username, u_password):
+    try:
+        ans = auth.register(u_email, u_username, u_password)
+        client_socket.send(ans.encode())
+        if ans == "<EXISTS>":
+            print("Registration failed: Email already exists")
+            return "<EXISTS>"
+
+        elif ans == "<SUCCESS>":
+            print("Registration successful")
+            # will set the identifier folder's name to the username
+            return u_username
+        else:
+            print(f"Unexpected response from registration: {ans}")
+
+    except Exception as e:
+        print(f"Unexpected error during registration: {e}")
+        client_socket.send("Unexpected error during registration".encode())
 
 
 def handle_requests(client_socket, identifier):
-    sub_folder_path = os.path.join('Received_files', identifier)
+    sub_folder_path = os.path.join('Received_files', identifier != "")
     os.makedirs(sub_folder_path, exist_ok=True)
 
     try:
@@ -84,16 +104,26 @@ server_socket.bind((HOST, PORT))
 server_socket.listen(5)
 print(f"Server listening on {HOST}:{PORT}")
 
+auth = UserAuthentication()
+
 try:
     while True:
         client_socket, client_address = server_socket.accept()
         print(f"Accepted connection from {client_address}")
 
-        identifier = client_socket.recv(1024).decode()
+        while True:
+            u_email = client_socket.recv(1024).decode()
+            u_username = client_socket.recv(1024).decode()
+            u_password = client_socket.recv(1024).decode()
 
-        # Start a new thread to handle the client
-        client_handler = threading.Thread(target=handle_requests, args=(client_socket, identifier))
-        client_handler.start()
+            identifier = handle_register_info(client_socket, u_email, u_username, u_password)
+
+            if identifier != "<EXISTS>":
+                # Start a new thread to handle the client
+                client_handler = threading.Thread(target=handle_requests, args=(client_socket, identifier))
+                client_handler.start()
+                break  # Break out of the inner loop if registration is successful
+
 
 except KeyboardInterrupt:
     print("Server terminated by user.")

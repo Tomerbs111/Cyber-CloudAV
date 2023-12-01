@@ -3,14 +3,9 @@ import hashlib
 
 
 class UserAuthentication:
-    def __init__(self, database_path='database/User_info.db'):
+    def __init__(self, database_path='../database/User_info.db'):
         self.conn = sqlite3.connect(database_path)
         self.cur = self.conn.cursor()
-
-    def _hash_input(self, input):
-        h = hashlib.sha256()
-        h.update(input.encode())
-        return h.hexdigest()
 
     def _email_exists(self, email):
         query = "SELECT * FROM Authenticated WHERE LOWER(email)=?"
@@ -18,12 +13,13 @@ class UserAuthentication:
         return result is not None
 
     def login(self, email, password):
-        get_from_query = self.cur.execute("SELECT * FROM Authenticated WHERE LOWER(email)=?", [email.lower()]).fetchone()
+        get_from_query = self.cur.execute("SELECT * FROM Authenticated WHERE LOWER(email)=?",
+                                          [email.lower()]).fetchone()
         ans = ""
         if get_from_query is not None:
             hashed_password = self._hash_input(password)
             if hashed_password == get_from_query[3]:
-                print("Login succeed")
+                # Login succeed
                 return get_from_query[2]  # returns username
             else:
                 return "<WRONG_PASSWORD>"
@@ -33,7 +29,7 @@ class UserAuthentication:
     def register(self, email, username, password):
         email = email.lower()  # Convert email to lowercase
         if self._email_exists(email):
-            print("Email already exists in the database.")
+            # Email already exists in the database.
             return "<EXISTS>"
 
         hashed_password = self._hash_input(password)
@@ -51,7 +47,8 @@ class UserAuthentication:
     def close_db(self):
         self.conn.close()
 
-# Example usage:
-# auth = UserAuthentication()
-# print(auth.email_exists("test@example.com"))
-# auth.close_db()
+    @staticmethod
+    def _hash_input(password):
+        h = hashlib.sha256()
+        h.update(password.encode())
+        return h.hexdigest()

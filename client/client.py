@@ -1,14 +1,68 @@
 import socket
 import os
+import re
 
 HOST = '127.0.0.1'
-PORT = 40302
+PORT = 40303
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
+
+
+def when_try_register():
+    max_attempts = 10
+    attempts = 0
+
+    while attempts < max_attempts:
+        u_email = input("Enter email: ")
+        u_username = input("Enter username: ")
+        u_password = input("Enter password: ")
+
+        # Checking email
+        if len(u_email) > 0 and re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', u_email):
+            print("---Email is valid---")
+        else:
+            print("Invalid email format. Please enter a valid email.")
+            attempts += 1
+            continue
+
+        # Checking username
+        if len(u_username) > 0:
+            print("---Username is valid---")
+        else:
+            print("You must provide a username.")
+            attempts += 1
+            continue
+
+        # Checking password
+        if len(u_password) > 0 and len(u_password) >= 8:
+            print("---Password is valid---")
+        else:
+            print("Invalid password. Password must be 8 characters or longer.")
+            attempts += 1
+            continue
+
+        print("All fields are good, waiting for server response...")
+        client_socket.send(u_email.encode())
+        client_socket.send(u_username.encode())
+        client_socket.send(u_password.encode())
+
+        break  # Break out of the loop as all fields are valid
+
+    if attempts == max_attempts:
+        print("Maximum number of attempts reached. Registration failed.")
+
+
 try:
-    identifier = input("Enter an identifier for the sub-folder: ")
-    client_socket.send(identifier.encode())
+    when_try_register()
+    reg_ans = client_socket.recv(1024).decode()
+    if reg_ans == "<EXISTS>":
+        print("Registration failed: Email already exists")
+        when_try_register()
+    elif reg_ans == "<SUCCESS>":
+        print("Registration successful")
+    else:
+        print(f"Unexpected response from registration")
 
     while True:
         action = input("Do you want to send a file (S) or receive a file (R) or end (END)? ")
