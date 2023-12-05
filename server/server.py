@@ -15,7 +15,6 @@ def handle_register_info(client_socket, u_email, u_username, u_password):
         if ans == "<EXISTS>":
             print("Registration failed: Email already exists")
             return "<EXISTS>"
-
         elif ans == "<SUCCESS>":
             print("Registration successful")
             # will set the identifier folder's name to the username
@@ -29,7 +28,7 @@ def handle_register_info(client_socket, u_email, u_username, u_password):
 
 
 def handle_requests(client_socket, identifier):
-    sub_folder_path = os.path.join('Received_files', identifier != "")
+    sub_folder_path = os.path.join('Received_files', identifier)
     os.makedirs(sub_folder_path, exist_ok=True)
 
     try:
