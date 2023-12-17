@@ -5,6 +5,7 @@ import re
 class RegistrationApp(CTk):
     def __init__(self):
         super().__init__()
+        self.toplevel_window = None
         self.geometry("700x500")
         self.title("Registration App")
 
@@ -92,6 +93,7 @@ class RegistrationApp(CTk):
         self.login_btn = CTkButton(
             master=self,
             text="Wanna log in?",
+            command=self.go_to_login
         )
         self.login_btn.place(relx=0.25, rely=0.65)
 
@@ -123,6 +125,9 @@ class RegistrationApp(CTk):
 
         if checksum == 3:
             self.l_confirm.configure(text="User Registered successfully")
+
+    def go_to_login(self):
+
 
 
 class LoginApp(CTk):
