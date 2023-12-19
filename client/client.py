@@ -46,6 +46,7 @@ def when_try_register():
         client_socket.send(u_email.encode())
         client_socket.send(u_username.encode())
         client_socket.send(u_password.encode())
+        print("Send")
 
         break  # Break out of the loop as all fields are valid
 
