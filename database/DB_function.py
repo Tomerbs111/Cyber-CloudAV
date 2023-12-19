@@ -52,7 +52,7 @@ def main():
     create_database()
 
     while True:
-        print("\nChoose an operation:")
+        print("Choose an operation:")
         print("1. Delete all accounts")
         print("2. Remove account by email")
         print("3. Exit")

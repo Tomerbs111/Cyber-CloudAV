@@ -1,6 +1,7 @@
 import socket
 import os
 import re
+from GUI.Registration_GUI import RegistrationApp
 
 HOST = '127.0.0.1'
 PORT = 40303
@@ -10,48 +11,14 @@ client_socket.connect((HOST, PORT))
 
 
 def when_try_register():
-    max_attempts = 10
-    attempts = 0
-
-    while attempts < max_attempts:
-        u_email = input("Enter email: ")
-        u_username = input("Enter username: ")
-        u_password = input("Enter password: ")
-
-        # Checking email
-        if len(u_email) > 0 and re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', u_email):
-            print("---Email is valid---")
-        else:
-            print("Invalid email format. Please enter a valid email.")
-            attempts += 1
-            continue
-
-        # Checking username
-        if len(u_username) > 0:
-            print("---Username is valid---")
-        else:
-            print("You must provide a username.")
-            attempts += 1
-            continue
-
-        # Checking password
-        if len(u_password) > 0 and len(u_password) >= 8:
-            print("---Password is valid---")
-        else:
-            print("Invalid password. Password must be 8 characters or longer.")
-            attempts += 1
-            continue
-
-        print("All fields are good, waiting for server response...")
-        client_socket.send(u_email.encode())
-        client_socket.send(u_username.encode())
-        client_socket.send(u_password.encode())
-        print("Send")
-
-        break  # Break out of the loop as all fields are valid
-
-    if attempts == max_attempts:
-        print("Maximum number of attempts reached. Registration failed.")
+    app = RegistrationApp()
+    app.mainloop()
+    u_email, u_username, u_password = app.get_user_values()
+    print("All fields are good, waiting for server response...")
+    client_socket.send(u_email.encode())
+    client_socket.send(u_username.encode())
+    client_socket.send(u_password.encode())
+    print("Send")
 
 
 try:
