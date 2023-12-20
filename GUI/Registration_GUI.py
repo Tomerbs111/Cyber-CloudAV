@@ -11,6 +11,7 @@ class RegistrationApp(CTk):
         self.registered_email = None
         self.registered_username = None
         self.registered_password = None
+        self.attempt_type = "<REGISTER>"
 
         # ----------------welcome----------------
         set_appearance_mode("system")
@@ -164,6 +165,7 @@ class RegistrationApp(CTk):
         self.welcome.configure(text="Log into CloudAV")
         self.submit_btn.configure(text="Log in", command=self.l_when_submit)
         self.switch_btn.configure(text="Sign in instead?")
+        self.status = "<LOGIN>"
 
         self.l_username.destroy()
         self.username_entry.destroy()
@@ -179,9 +181,13 @@ class RegistrationApp(CTk):
         self.submit_btn.place(rely=0.5)
         self.l_confirm.place(rely=0.6)
 
+        # Notify the client when switching to login page
+        self.attempt_type = "<LOGIN>"
+
     def get_user_values(self):
         if not self.email_entry:
-            return self.registered_email, self.registered_password
+            return self.registered_email, self.registered_password, self.attempt_type
         else:
-            return self.registered_email, self.registered_username, self.registered_password
+            return self.registered_email, self.registered_username, self.registered_password, self.attempt_type
+
 

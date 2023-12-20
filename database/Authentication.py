@@ -41,7 +41,6 @@ class UserAuthentication:
         self.cur.execute(insert_query, (email, username, hashed_password))
         self.conn.commit()
 
-        print("Login information inserted into the database.")
         return "<SUCCESS>"
 
     def close_db(self):

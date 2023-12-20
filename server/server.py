@@ -14,7 +14,8 @@ def handle_register_info(client_socket, u_email, u_username, u_password):
         client_socket.send(ans.encode())
         if ans == "<EXISTS>":
             print("Registration failed: Email already exists")
-            return "<EXISTS>"
+            return "<FAILED>"
+
         elif ans == "<SUCCESS>":
             print("Registration successful")
             # will set the identifier folder's name to the username
@@ -25,6 +26,23 @@ def handle_register_info(client_socket, u_email, u_username, u_password):
     except Exception as e:
         print(f"Unexpected error during registration: {e}")
         client_socket.send("Unexpected error during registration".encode())
+
+
+def handle_login_info(client_socket, u_email, u_password):
+    try:
+        ans = auth.login(u_email, u_password)
+        client_socket.send(ans.encode())
+        if ans == "<WRONG_PASSWORD>" or ans == "<WRONG_EMAIL>":
+            print("Login failed: Wrong email or password")
+            return "<FAILED>"
+        else:
+            print(f"Login successful for user: {ans}")
+            return ans
+
+    except Exception as e:
+        print(f"Unexpected error during login: {e}")
+        client_socket.send("Unexpected error during Login".encode())
+        return "<FAILED>"
 
 
 def handle_requests(client_socket, identifier):
@@ -110,14 +128,21 @@ try:
         client_socket, client_address = server_socket.accept()
         print(f"Accepted connection from {client_address}")
 
+        identifier = None  # Initialize identifier outside the loop
+
         while True:
-            u_email = client_socket.recv(1024).decode()
-            u_username = client_socket.recv(1024).decode()
-            u_password = client_socket.recv(1024).decode()
+            u_status = client_socket.recv(1024).decode()
+            if u_status == "<REGISTER>":
+                u_email = client_socket.recv(1024).decode()
+                u_username = client_socket.recv(1024).decode()
+                u_password = client_socket.recv(1024).decode()
+                identifier = handle_register_info(client_socket, u_email, u_username, u_password)
+            elif u_status == "<LOGIN>":
+                u_email = client_socket.recv(1024).decode()
+                u_password = client_socket.recv(1024).decode()
+                identifier = handle_login_info(client_socket, u_email, u_password)
 
-            identifier = handle_register_info(client_socket, u_email, u_username, u_password)
-
-            if identifier != "<EXISTS>":
+            if identifier and identifier != "<FAILED>":
                 # Start a new thread to handle the client
                 client_handler = threading.Thread(target=handle_requests, args=(client_socket, identifier))
                 client_handler.start()

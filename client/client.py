@@ -9,28 +9,46 @@ PORT = 40303
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
 
+app = RegistrationApp()
+app.mainloop()
 
-def when_try_register():
-    app = RegistrationApp()
-    app.mainloop()
-    u_email, u_username, u_password = app.get_user_values()
-    print("All fields are good, waiting for server response...")
-    client_socket.send(u_email.encode())
-    client_socket.send(u_username.encode())
-    client_socket.send(u_password.encode())
-    print("Send")
+u_email, u_username, u_password, attempt_type = app.get_user_values()
+client_socket.send(attempt_type.encode())
+
+
+def when_try_sign():
+    if attempt_type == "<REGISTER>":
+        print("All fields are good, waiting for server response...")
+        client_socket.send(u_email.encode())
+        client_socket.send(u_username.encode())
+        client_socket.send(u_password.encode())
+        print("Send reg")
+
+    if attempt_type == "<LOGIN>":
+        print("All fields are good, waiting for server response...")
+        client_socket.send(u_email.encode())
+        client_socket.send(u_password.encode())
+        print("Send log")
+
 
 
 try:
-    when_try_register()
-    reg_ans = client_socket.recv(1024).decode()
-    if reg_ans == "<EXISTS>":
-        print("Registration failed: Email already exists")
-        when_try_register()
-    elif reg_ans == "<SUCCESS>":
-        print("Registration successful")
-    else:
-        print(f"Unexpected response from registration")
+    when_try_sign()
+    ans = client_socket.recv(1024).decode()
+    if attempt_type == "<REGISTER>":
+        if ans == "<EXISTS>":
+            print("Registration failed: Email already exists")
+            when_try_sign()
+        elif ans == "<SUCCESS>":
+            print("Registration successful")
+        else:
+            print(f"Unexpected response from registration")
+
+    if attempt_type == "<LOGIN>":
+        if ans == "<WRONG_PASSWORD>" or ans == "<WRONG_EMAIL>":
+            print("Login failed: Wrong email or password")
+        else:
+            print("Login successful")
 
     while True:
         action = input("Do you want to send a file (S) or receive a file (R) or end (END)? ")
