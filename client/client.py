@@ -9,46 +9,63 @@ PORT = 40303
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
 
-app = RegistrationApp()
-app.mainloop()
 
-u_email, u_username, u_password, attempt_type = app.get_user_values()
-client_socket.send(attempt_type.encode())
+def handle_registration(client_socket, email, username, password, attempt_type, app_ans):
+    print(f"Type: {attempt_type}")
 
+    client_socket.send(attempt_type.encode())
+    print("status sent")
 
-def when_try_sign():
     if attempt_type == "<REGISTER>":
-        print("All fields are good, waiting for server response...")
-        client_socket.send(u_email.encode())
-        client_socket.send(u_username.encode())
-        client_socket.send(u_password.encode())
-        print("Send reg")
+        print("User info -----------------------")
+        print(f"Email: {email}")
+        print(f"Username: {username}")
+        print(f"Password: {password}")
+        print("---------------------------------")
+
+        client_socket.send(email.encode())
+        print("sent email")
+        client_socket.send(username.encode())
+        print("sent username")
+        client_socket.send(password.encode())
+        print("sent password")
+
+        server_reglog_ans = client_socket.recv(1024).decode()
+        print(f"answer: {server_reglog_ans}")
+
+        if server_reglog_ans == "<EXISTS>":
+            app_ans.ans_email.configure(text="Registration failed. Email is already in use.", text_color="#FF0000")
+            app_ans.ans_username.configure(text="Registration failed.", text_color="#FF0000")
+            app_ans.ans_password.configure(text="Registration failed.", text_color="#FF0000")
+        if server_reglog_ans == "<SUCCESS>":
+            app_ans.l_confirm.configure(text="User Registered successfully")
 
     if attempt_type == "<LOGIN>":
-        print("All fields are good, waiting for server response...")
-        client_socket.send(u_email.encode())
-        client_socket.send(u_password.encode())
-        print("Send log")
+        print("User info -----------------------")
+        print(f"Email: {email}")
+        print(f"Password: {password}")
+        print("---------------------------------")
+        client_socket.sendall(email.encode())
+        client_socket.sendall(password.encode())
 
+        server_reglog_ans = client_socket.recv(1024).decode()
+        print(f"answer: {server_reglog_ans}")
+
+        if server_reglog_ans == "<NO_EMAIL_EXISTS>":
+            app_ans.ans_email.configure(text="Login failed. No accounts under the provided email.",
+                                        text_color="#FF0000")
+            app_ans.ans_password.configure(text="Login failed. Password doesn't match to the provided email.",
+                                           text_color="#FF0000")
+        elif server_reglog_ans == "<WRONG_PASSWORD>":
+            app_ans.ans_password.configure(text="Login failed. Password doesn't match to the provided email.",
+                                           text_color="#FF0000")
+        else:
+            app_ans.l_confirm.configure(text=f"Welcome back {server_reglog_ans}")
 
 
 try:
-    when_try_sign()
-    ans = client_socket.recv(1024).decode()
-    if attempt_type == "<REGISTER>":
-        if ans == "<EXISTS>":
-            print("Registration failed: Email already exists")
-            when_try_sign()
-        elif ans == "<SUCCESS>":
-            print("Registration successful")
-        else:
-            print(f"Unexpected response from registration")
-
-    if attempt_type == "<LOGIN>":
-        if ans == "<WRONG_PASSWORD>" or ans == "<WRONG_EMAIL>":
-            print("Login failed: Wrong email or password")
-        else:
-            print("Login successful")
+    win = RegistrationApp(client_socket, handle_registration)
+    win.mainloop()
 
     while True:
         action = input("Do you want to send a file (S) or receive a file (R) or end (END)? ")

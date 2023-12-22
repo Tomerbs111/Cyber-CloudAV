@@ -14,7 +14,7 @@ def handle_register_info(client_socket, u_email, u_username, u_password):
         client_socket.send(ans.encode())
         if ans == "<EXISTS>":
             print("Registration failed: Email already exists")
-            return "<FAILED>"
+            return "<EXISTS>"
 
         elif ans == "<SUCCESS>":
             print("Registration successful")
@@ -30,13 +30,13 @@ def handle_register_info(client_socket, u_email, u_username, u_password):
 
 def handle_login_info(client_socket, u_email, u_password):
     try:
-        ans = auth.login(u_email, u_password)
+        ans, username = auth.login(u_email, u_password)
         client_socket.send(ans.encode())
         if ans == "<WRONG_PASSWORD>" or ans == "<WRONG_EMAIL>":
             print("Login failed: Wrong email or password")
             return "<FAILED>"
         else:
-            print(f"Login successful for user: {ans}")
+            print(f"Login successful for user: {username}")
             return ans
 
     except Exception as e:
@@ -132,22 +132,30 @@ try:
 
         while True:
             u_status = client_socket.recv(1024).decode()
+            print(u_status)
             if u_status == "<REGISTER>":
                 u_email = client_socket.recv(1024).decode()
+                print(u_email)
                 u_username = client_socket.recv(1024).decode()
+                print(u_username + "\n")
                 u_password = client_socket.recv(1024).decode()
+                print(u_password)
+
                 identifier = handle_register_info(client_socket, u_email, u_username, u_password)
             elif u_status == "<LOGIN>":
-                u_email = client_socket.recv(1024).decode()
-                u_password = client_socket.recv(1024).decode()
-                identifier = handle_login_info(client_socket, u_email, u_password)
+                print("login")
+                u_email = client_socket.recv(100).decode()
 
-            if identifier and identifier != "<FAILED>":
+                u_password = client_socket.recv(100).decode()
+                print(u_password)
+                identifier = handle_login_info(client_socket, u_email, u_password)
+                print("1")
+
+            if identifier and identifier != "<EXISTS>":
                 # Start a new thread to handle the client
                 client_handler = threading.Thread(target=handle_requests, args=(client_socket, identifier))
                 client_handler.start()
                 break  # Break out of the inner loop if registration is successful
-
 
 except KeyboardInterrupt:
     print("Server terminated by user.")

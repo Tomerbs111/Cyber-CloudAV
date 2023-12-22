@@ -3,11 +3,12 @@ import re
 
 
 class RegistrationApp(CTk):
-    def __init__(self, registration_callback):
+    def __init__(self, client_socket, registration_callback):
         super().__init__()
         self.geometry("700x500")
         self.title("Registration App")
 
+        self.client_socket = client_socket
         self.registered_email = None
         self.registered_username = None
         self.registered_password = None
@@ -72,7 +73,7 @@ class RegistrationApp(CTk):
             master=self,
             placeholder_text="Min. 8 characters",
             width=300,
-            show="●"
+
         )
         self.password_entry.place(relx=0.02, rely=0.5)
         self.ans_password = CTkLabel(
@@ -137,6 +138,7 @@ class RegistrationApp(CTk):
             self.registered_password = u_password
 
             self.registration_callback(
+                self.client_socket,
                 self.registered_email,
                 self.registered_username,
                 self.registered_password,

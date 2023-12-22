@@ -43,5 +43,6 @@ def handle_registration(email, username, password, attempt_type, app_ans):
 
 if __name__ == "__main__":
     win = RegistrationApp(handle_registration)
-
     win.mainloop()
+
+
