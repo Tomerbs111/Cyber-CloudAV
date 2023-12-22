@@ -3,7 +3,7 @@ import re
 
 
 class RegistrationApp(CTk):
-    def __init__(self):
+    def __init__(self, registration_callback):
         super().__init__()
         self.geometry("700x500")
         self.title("Registration App")
@@ -12,6 +12,7 @@ class RegistrationApp(CTk):
         self.registered_username = None
         self.registered_password = None
         self.attempt_type = "<REGISTER>"
+        self.registration_callback = registration_callback
 
         # ----------------welcome----------------
         set_appearance_mode("system")
@@ -131,10 +132,17 @@ class RegistrationApp(CTk):
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 3:
-            self.l_confirm.configure(text="User Registered successfully")
             self.registered_email = u_email
             self.registered_username = u_username
             self.registered_password = u_password
+
+            self.registration_callback(
+                self.registered_email,
+                self.registered_username,
+                self.registered_password,
+                self.attempt_type,
+                self
+            )
 
     # ----------------checks fields without username----------------
     def l_when_submit(self):
@@ -157,15 +165,21 @@ class RegistrationApp(CTk):
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 2:
-            self.l_confirm.configure(text="User logged in successfully")
             self.registered_email = u_email
             self.registered_password = u_password
+
+            self.registration_callback(
+                self.registered_email,
+                self.registered_username,
+                self.registered_password,
+                self.attempt_type,
+                self
+            )
 
     def go_to_login(self):
         self.welcome.configure(text="Log into CloudAV")
         self.submit_btn.configure(text="Log in", command=self.l_when_submit)
         self.switch_btn.configure(text="Sign in instead?")
-        self.status = "<LOGIN>"
 
         self.l_username.destroy()
         self.username_entry.destroy()
@@ -183,11 +197,5 @@ class RegistrationApp(CTk):
 
         # Notify the client when switching to login page
         self.attempt_type = "<LOGIN>"
-
-    def get_user_values(self):
-        if not self.email_entry:
-            return self.registered_email, self.registered_password, self.attempt_type
-        else:
-            return self.registered_email, self.registered_username, self.registered_password, self.attempt_type
 
 
