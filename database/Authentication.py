@@ -3,18 +3,18 @@ import hashlib
 
 
 class UserAuthentication:
-    def __init__(self, database_path='../database/User_info.db'):
+    def __init__(self, database_path='database/User_info.db'):
         self.conn = sqlite3.connect(database_path)
         self.cur = self.conn.cursor()
 
     def _email_exists(self, email):
         query = "SELECT * FROM Authenticated WHERE LOWER(email)=?"
-        result = self.cur.execute(query, [email.lower()]).fetchone()
+        result = self.cur.execute(query, [email]).fetchone()
         return result is not None
 
     def login(self, email, password):
         get_from_query = self.cur.execute("SELECT * FROM Authenticated WHERE LOWER(email)=?",
-                                          [email.lower()]).fetchone()
+                                          [email]).fetchone()
         ans = ""
         if get_from_query is not None:
             hashed_password = self._hash_input(password)
@@ -24,7 +24,7 @@ class UserAuthentication:
             else:
                 return "<WRONG_PASSWORD>"
         else:
-            return "<WRONG_EMAIL>"
+            return "<NO_EMAIL_EXISTS>"
 
     def register(self, email, username, password):
         email = email.lower()  # Convert email to lowercase
