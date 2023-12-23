@@ -30,14 +30,17 @@ def handle_register_info(client_socket, u_email, u_username, u_password):
 
 def handle_login_info(client_socket, u_email, u_password):
     try:
-        ans, username = auth.login(u_email, u_password)
-        client_socket.send(ans.encode())
-        if ans == "<WRONG_PASSWORD>" or ans == "<WRONG_EMAIL>":
-            print("Login failed: Wrong email or password")
-            return "<FAILED>"
+        auth_ans = auth.login(u_email, u_password)
+        client_socket.send(auth_ans.encode())
+        if auth_ans == "<NO_EMAIL_EXISTS>":
+            print("Login failed. No accounts under the provided email.")
+            return
+        elif auth_ans == "<WRONG_PASSWORD>":
+            print("Login failed. Password doesn't match to the provided email.")
+            return
         else:
-            print(f"Login successful for user: {username}")
-            return ans
+            print("User logged in Successfully")
+            return auth_ans
 
     except Exception as e:
         print(f"Unexpected error during login: {e}")
@@ -132,24 +135,17 @@ try:
 
         while True:
             u_status = client_socket.recv(1024).decode()
-            print(u_status)
             if u_status == "<REGISTER>":
                 u_email = client_socket.recv(1024).decode()
-                print(u_email)
                 u_username = client_socket.recv(1024).decode()
-                print(u_username + "\n")
                 u_password = client_socket.recv(1024).decode()
-                print(u_password)
 
                 identifier = handle_register_info(client_socket, u_email, u_username, u_password)
             elif u_status == "<LOGIN>":
-                print("login")
                 u_email = client_socket.recv(100).decode()
-
                 u_password = client_socket.recv(100).decode()
-                print(u_password)
+
                 identifier = handle_login_info(client_socket, u_email, u_password)
-                print("1")
 
             if identifier and identifier != "<EXISTS>":
                 # Start a new thread to handle the client

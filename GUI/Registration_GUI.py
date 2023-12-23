@@ -3,17 +3,15 @@ import re
 
 
 class RegistrationApp(CTk):
-    def __init__(self, client_socket, registration_callback):
+    def __init__(self, client_socket):
         super().__init__()
         self.geometry("700x500")
         self.title("Registration App")
 
+        self.auth_completed = False
+        self.server_reglog_ans = None
         self.client_socket = client_socket
-        self.registered_email = None
-        self.registered_username = None
-        self.registered_password = None
         self.attempt_type = "<REGISTER>"
-        self.registration_callback = registration_callback
 
         # ----------------welcome----------------
         set_appearance_mode("system")
@@ -85,7 +83,7 @@ class RegistrationApp(CTk):
         # ----------------register----------------
         self.submit_btn = CTkButton(
             master=self,
-            text="Register",
+            text="Sign up",
             command=self.r_when_submit
         )
         self.submit_btn.place(relx=0.02, rely=0.65)
@@ -97,7 +95,7 @@ class RegistrationApp(CTk):
         )
         self.switch_btn = CTkButton(
             master=self,
-            text="Log in instead?",
+            text="Sign in instead?",
             command=self.go_to_login
         )
         self.switch_btn.place(relx=0.25, rely=0.65)
@@ -133,18 +131,30 @@ class RegistrationApp(CTk):
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 3:
-            self.registered_email = u_email
-            self.registered_username = u_username
-            self.registered_password = u_password
+            self.client_socket.send(self.attempt_type.encode())
+            print("status sent")
 
-            self.registration_callback(
-                self.client_socket,
-                self.registered_email,
-                self.registered_username,
-                self.registered_password,
-                self.attempt_type,
-                self
-            )
+            if self.attempt_type == "<REGISTER>":
+                print("User info -----------------------")
+                print(f"Email: {u_email}")
+                print(f"Username: {u_username}")
+                print(f"Password: {u_password}")
+                print("---------------------------------")
+
+                self.client_socket.send(u_email.encode())
+                self.client_socket.send(u_username.encode())
+                self.client_socket.send(u_password.encode())
+
+                self.server_reglog_ans = self.client_socket.recv(1024).decode()
+                print(f"answer: {self.server_reglog_ans}")
+
+                if self.server_reglog_ans == "<EXISTS>":
+                    self.ans_email.configure(text="Registration failed. Email is already in use.", text_color="#FF0000")
+                    self.ans_username.configure(text="Registration failed.", text_color="#FF0000")
+                    self.ans_password.configure(text="Registration failed.", text_color="#FF0000")
+                if self.server_reglog_ans == "<SUCCESS>":
+                    self.l_confirm.configure(text="User Registered successfully")
+                    self.auth_completed = True
 
     # ----------------checks fields without username----------------
     def l_when_submit(self):
@@ -167,21 +177,35 @@ class RegistrationApp(CTk):
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 2:
-            self.registered_email = u_email
-            self.registered_password = u_password
+            self.client_socket.send(self.attempt_type.encode())
 
-            self.registration_callback(
-                self.registered_email,
-                self.registered_username,
-                self.registered_password,
-                self.attempt_type,
-                self
-            )
+            if self.attempt_type == "<LOGIN>":
+                print("User info -----------------------")
+                print(f"Email: {u_email}")
+                print(f"Password: {u_password}")
+                print("---------------------------------")
+                self.client_socket.send(u_email.encode())
+                self.client_socket.send(u_password.encode())
+
+                self.server_reglog_ans = self.client_socket.recv(1024).decode()
+                print(f"answer: {self.server_reglog_ans}")
+
+                if self.server_reglog_ans == "<NO_EMAIL_EXISTS>":
+                    self.ans_email.configure(text="Login failed. No accounts under the provided email.",
+                                             text_color="#FF0000")
+                    self.ans_password.configure(text="Login failed. Password doesn't match to the provided email.",
+                                                text_color="#FF0000")
+                elif self.server_reglog_ans == "<WRONG_PASSWORD>":
+                    self.ans_password.configure(text="Login failed. Password doesn't match to the provided email.",
+                                                text_color="#FF0000")
+                else:
+                    self.l_confirm.configure(text=f"Welcome back {self.server_reglog_ans}")
+                    self.auth_completed = True
 
     def go_to_login(self):
-        self.welcome.configure(text="Log into CloudAV")
-        self.submit_btn.configure(text="Log in", command=self.l_when_submit)
-        self.switch_btn.configure(text="Sign in instead?")
+        self.welcome.configure(text="Sign in to CloudAV")
+        self.submit_btn.configure(text="Sign in", command=self.l_when_submit)
+        self.switch_btn.configure(text="Sign up instead?")
 
         self.l_username.destroy()
         self.username_entry.destroy()
@@ -199,5 +223,3 @@ class RegistrationApp(CTk):
 
         # Notify the client when switching to login page
         self.attempt_type = "<LOGIN>"
-
-
