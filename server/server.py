@@ -1,7 +1,7 @@
 import socket
 import os
 import threading
-import tqdm
+from tqdm import *
 from database.Authentication import UserAuthentication
 
 HOST = '127.0.0.1'

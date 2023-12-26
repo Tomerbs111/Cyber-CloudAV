@@ -1,87 +1,28 @@
-# ----------------welcome----------------
-set_appearance_mode("system")
-self.welcome = CTkLabel(
-    master=self,
-    text="Welcome to CloudAV",
-    font=("Calibri bold", 35)
-)
-self.welcome.place(relx=0.02, rely=0.05)
+from customtkinter import *
 
-# ----------------email----------------
-self.l_email = CTkLabel(
-    master=self,
-    text="Email",
-    font=("Calibri", 15)
-)
-self.l_email.place(relx=0.02, rely=0.15)
-self.email_entry = CTkEntry(
-    master=self,
-    placeholder_text="example@example.com",
-    width=300,
-)
-self.email_entry.place(relx=0.02, rely=0.2)
-self.ans_email = CTkLabel(
-    master=self,
-    text=""
-)
-self.ans_email.place(relx=0.02, rely=0.255)
+app = CTk()
 
-# ----------------username----------------
-self.l_username = CTkLabel(
-    master=self,
-    text="Username",
-    font=("Calibri", 15)
-)
-self.l_username.place(relx=0.02, rely=0.3)
-self.username_entry = CTkEntry(
-    master=self,
-    placeholder_text="Min. 6 characters",
-    width=300
-)
-self.username_entry.place(relx=0.02, rely=0.35)
-self.ans_username = CTkLabel(
-    master=self,
-    text=""
-)
-self.ans_username.place(relx=0.02, rely=0.405)
+f_file_list = CTkScrollableFrame(master=app, orientation="vertical")
 
-# ----------------password----------------
-self.l_password = CTkLabel(
-    master=self,
-    text="Password",
-    font=("Calibri", 15)
-)
-self.l_password.place(relx=0.02, rely=0.45)
-self.password_entry = CTkEntry(
-    master=self,
-    placeholder_text="Min. 8 characters",
-    width=300,
+f_file = CTkFrame(master=f_file_list).pack(expand=True, side='top', fill='x')
+lu_filename = CTkLabel(
+    master=f_file_list,
+    text="my_file.txt"
+).pack(side='left', padx=20)
 
-)
-self.password_entry.place(relx=0.02, rely=0.5)
-self.ans_password = CTkLabel(
-    master=self,
-    text=""
-)
-self.ans_password.place(relx=0.02, rely=0.555)
+lu_size = CTkLabel(
+    master=f_file_list,
+    text="100MB"
+).pack(side='right', padx=20)
 
-# ----------------register----------------
-self.submit_btn = CTkButton(
-    master=self,
-    text="Sign up",
-    command=self.r_when_submit
-)
-self.submit_btn.place(relx=0.02, rely=0.65)
-self.l_confirm = CTkLabel(
-    master=self,
-    text="",
-    font=("Calibri bold", 20),
-    text_color="#009900"
-)
-self.switch_btn = CTkButton(
-    master=self,
-    text="Sign in instead?",
-    command=self.go_to_login
-)
-self.switch_btn.place(relx=0.25, rely=0.65)
-self.l_confirm.place(relx=0.02, rely=0.75)
+lu_date_mod = CTkLabel(
+    master=f_file_list,
+    text="1/10/2023"
+).pack(side='right', padx=30)
+
+lu_owner = CTkLabel(
+    master=f_file_list,
+    text="tomer"
+).pack(side='right', padx=30)
+
+app.mainloop()
