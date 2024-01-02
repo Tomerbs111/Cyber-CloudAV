@@ -1,12 +1,28 @@
 import sqlite3
 
+conn = sqlite3.connect('User_info.db')
+cursor = conn.cursor()
 
-def create_database():
-    conn = sqlite3.connect('User_info.db')
-    cursor = conn.cursor()
 
+def create_file_database():
+    create_table_query_files = '''
+    CREATE TABLE IF NOT EXISTS UserFiles (
+        id INTEGER PRIMARY KEY,
+        UserID INTEGER,
+        Name TEXT NOT NULL,
+        Size INTEGER NOT NULL,
+        Date TEXT NOT NULL,
+        FileBytes BLOB,  -- Assuming this is for storing file content
+        FOREIGN KEY (UserID) REFERENCES Authenticated(id)
+    );
+    '''
+    cursor.execute(create_table_query_files)
+    conn.commit()
+
+
+def create_user_database(conn, cursor):
     # query for user login
-    create_table_query_1 = '''
+    create_table_query_users = '''
     CREATE TABLE IF NOT EXISTS Authenticated (
         id INTEGER PRIMARY KEY,
         email TEXT NOT NULL,
@@ -15,15 +31,11 @@ def create_database():
     );
     '''
 
-    cursor.execute(create_table_query_1)
+    cursor.execute(create_table_query_users)
     conn.commit()
-    conn.close()
 
 
-def delete_all_accounts():
-    conn = sqlite3.connect('User_info.db')
-    cursor = conn.cursor()
-
+def delete_all_accounts(conn, cursor):
     # query to delete all accounts
     delete_query = '''
     DELETE FROM Authenticated;
@@ -31,7 +43,6 @@ def delete_all_accounts():
 
     cursor.execute(delete_query)
     conn.commit()
-    conn.close()
 
 
 def remove_account_by_email(email):
@@ -49,7 +60,9 @@ def remove_account_by_email(email):
 
 
 def main():
-    create_database()
+    create_user_database(conn, cursor)
+    create_file_database()
+    print("create_file_database was created")
 
     while True:
         print("Choose an operation:")
@@ -60,7 +73,7 @@ def main():
         choice = input("Enter the operation number: ")
 
         if choice == '1':
-            delete_all_accounts()
+            delete_all_accounts(conn, cursor)
             print("All accounts deleted.")
         elif choice == '2':
             email_to_remove = input("Enter the email to remove: ")
