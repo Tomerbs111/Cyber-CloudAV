@@ -1,28 +1,32 @@
-from customtkinter import *
+import pickle
+import socket
+import os
+import threading
+import tqdm
+from database.Authentication import UserAuthentication
+from database.UserFiles import UserFiles
+from datetime import datetime
+import sqlite3
 
-app = CTk()
+database_path = 'database/User_info.db'
+conn = sqlite3.connect(database_path)
+cur = conn.cursor()
 
-f_file_list = CTkScrollableFrame(master=app, orientation="vertical")
+# Assuming the 'FileBytes' column in 'UserFiles' table contains pickled data
+command = '''
+    SELECT FileBytes FROM UserFiles WHERE UserID = 1 AND Name = 'chord.docx';
+'''
 
-f_file = CTkFrame(master=f_file_list).pack(expand=True, side='top', fill='x')
-lu_filename = CTkLabel(
-    master=f_file_list,
-    text="my_file.txt"
-).pack(side='left', padx=20)
+result = cur.execute(command).fetchone()
 
-lu_size = CTkLabel(
-    master=f_file_list,
-    text="100MB"
-).pack(side='right', padx=20)
+if result:
+    print(result)
+    # Assuming 'a[0]' contains the pickled data
+    pickled_data = result[0]
 
-lu_date_mod = CTkLabel(
-    master=f_file_list,
-    text="1/10/2023"
-).pack(side='right', padx=30)
+    with open('chord.docx', 'wb') as file:
+        file.write(pickle.loads(pickled_data))
 
-lu_owner = CTkLabel(
-    master=f_file_list,
-    text="tomer"
-).pack(side='right', padx=30)
-
-app.mainloop()
+# Commit and close the connection
+conn.commit()
+conn.close()

@@ -7,7 +7,7 @@ class UserFiles:
         self.cur = self.conn.cursor()
         self.userid = userid
 
-    def InsertFile(self, userid, name, size, date, filebytes):
+    def InsertFile(self, name, size, date, filebytes):
         insert_file = '''
         INSERT INTO UserFiles (UserID, Name, Size, Date, FileBytes)
         VALUES (?, ?, ?, ?, ?);

@@ -12,7 +12,7 @@ def create_file_database():
         Name TEXT NOT NULL,
         Size INTEGER NOT NULL,
         Date TEXT NOT NULL,
-        FileBytes BLOB,  -- Assuming this is for storing file content
+        FileBytes BLOB,  
         FOREIGN KEY (UserID) REFERENCES Authenticated(id)
     );
     '''
@@ -86,5 +86,6 @@ def main():
             print("Invalid choice. Please enter a valid operation number.")
 
 
+# Call this function to delete the UserFiles table
 if __name__ == "__main__":
     main()

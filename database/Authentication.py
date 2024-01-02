@@ -43,6 +43,11 @@ class UserAuthentication:
 
         return "<SUCCESS>"
 
+    def get_userid(self, email):
+        get_from_query = self.cur.execute("SELECT id FROM Authenticated WHERE LOWER(email)=?",
+                                          [email]).fetchone()
+        return get_from_query
+
     def close_db(self):
         self.conn.close()
 

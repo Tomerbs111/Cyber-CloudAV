@@ -1,11 +1,14 @@
+import pickle
 import socket
 import os
 import threading
-from tqdm import *
+import tqdm
 from database.Authentication import UserAuthentication
+from database.UserFiles import UserFiles
+from datetime import datetime
 
 HOST = '127.0.0.1'
-PORT = 40303
+PORT = 40302
 
 
 def handle_register_info(client_socket, u_email, u_username, u_password):
@@ -18,8 +21,8 @@ def handle_register_info(client_socket, u_email, u_username, u_password):
 
         elif ans == "<SUCCESS>":
             print("Registration successful")
-            # will set the identifier folder's name to the username
-            return u_username
+            userid = auth.get_userid(u_email)
+            return userid[0]
         else:
             print(f"Unexpected response from registration: {ans}")
 
@@ -40,7 +43,8 @@ def handle_login_info(client_socket, u_email, u_password):
             return
         else:
             print("User logged in Successfully")
-            return auth_ans
+            userid = auth.get_userid(u_email)
+            return userid[0]
 
     except Exception as e:
         print(f"Unexpected error during login: {e}")
@@ -49,11 +53,9 @@ def handle_login_info(client_socket, u_email, u_password):
 
 
 def handle_requests(client_socket, identifier):
-    sub_folder_path = os.path.join('Received_files', identifier)
-    os.makedirs(sub_folder_path, exist_ok=True)
-
     try:
         while True:
+            user_files_manager = UserFiles(identifier)
             action = client_socket.recv(1024).decode()
 
             if action == "END":
@@ -64,24 +66,26 @@ def handle_requests(client_socket, identifier):
 
             if action == "S":
                 file_name = client_socket.recv(1024).decode()
-                file_path = os.path.join(sub_folder_path, file_name)
+                file_date = datetime.now()
                 file_size = client_socket.recv(1024).decode()
 
-                with open(file_path, "wb") as file:
-                    done_sending = False
-                    progress_bar = tqdm.tqdm(unit="B", unit_scale=True, unit_divisor=1000, total=int(file_size))
+                done_sending = False
+                progress_bar = tqdm.tqdm(unit="B", unit_scale=True, unit_divisor=1000, total=int(file_size))
 
-                    while not done_sending:
-                        data = client_socket.recv(1024)
-                        if data[-len(b"<END_OF_DATA>"):] == b"<END_OF_DATA>":
-                            done_sending = True
-                            file.write(data[:-len(b"<END_OF_DATA>")])
-                        else:
-                            file.write(data)
-                        progress_bar.update(len(data))
+                all_data = b""
+                while not done_sending:
+                    data = client_socket.recv(2048)
+                    if data[-len(b"<END_OF_DATA>"):] == b"<END_OF_DATA>":
+                        done_sending = True
+                        all_data += data[:-len(b"<END_OF_DATA>")]
+                        serialized_data = pickle.dumps(all_data)
+                    else:
+                        all_data += data
+                    progress_bar.update(len(data))
 
-                    progress_bar.close()
-                    print(f"File '{file_name}' received and saved in '{sub_folder_path}'")
+                progress_bar.close()
+                user_files_manager.InsertFile(file_name,file_size, file_date, serialized_data)
+                print(f"File '{file_name}' received and saved in the database")
 
             if action == "R":
                 file_name = client_socket.recv(1024).decode()
@@ -141,6 +145,7 @@ try:
                 u_password = client_socket.recv(1024).decode()
 
                 identifier = handle_register_info(client_socket, u_email, u_username, u_password)
+
             elif u_status == "<LOGIN>":
                 u_email = client_socket.recv(100).decode()
                 u_password = client_socket.recv(100).decode()
