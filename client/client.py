@@ -15,10 +15,10 @@ try:
 
     if win.auth_completed:
         while True:
-            action = input("Do you want to send a file (S) or receive a file (R) or end (END)? ")
+            action = input("Do you want to send a file (S) or receive a file (R) or Sign out (SIGN OUT)? ")
 
-            if action.upper() == "END":
-                client_socket.send("END".encode())
+            if action.upper() == "SIGN OUT":
+                client_socket.send("SIGN OUT".encode())
                 client_socket.close()
                 break
 

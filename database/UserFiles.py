@@ -23,7 +23,16 @@ class UserFiles:
         self.conn.commit()  # Don't forget to commit the changes
 
     # You might want to add a method to close the connection when you're done
+
+    def get_file_data(self, file_name):
+        get_data = self.cur.execute('''SELECT FileBytes FROM UserFiles WHERE UserID = ? AND Name = ?; ''',
+                                    [self.userid, file_name]).fetchone()
+        return get_data
+
+    def get_file_size(self, file_name):
+        get_size = self.cur.execute('''SELECT Size FROM UserFiles WHERE UserID = ? AND Name = ?; ''',
+                                    [self.userid, file_name]).fetchone()
+        return get_size
+
     def close_connection(self):
         self.conn.close()
-
-

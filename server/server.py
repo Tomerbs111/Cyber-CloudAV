@@ -5,15 +5,12 @@ import threading
 from database.Authentication import UserAuthentication
 from database.UserFiles import UserFiles
 from datetime import datetime
-import tqdm
-
 
 HOST = '127.0.0.1'
-PORT = 40302
+PORT = 40303
 
 
 def handle_register_info(client_socket, u_email, u_username, u_password):
-    auth = UserAuthentication()
     try:
         ans = auth.register(u_email, u_username, u_password)
         client_socket.send(ans.encode())
@@ -61,8 +58,8 @@ def handle_requests(client_socket, identifier):
             user_files_manager = UserFiles(identifier)
             action = client_socket.recv(1024).decode()
 
-            if action == "END":
-                print(f"The session with has ended.")
+            if action == "SIGN OUT":
+                print(f"{auth.get_username(identifier)} has signed out.")
                 break
 
             if action == "S":
@@ -81,30 +78,27 @@ def handle_requests(client_socket, identifier):
                     else:
                         all_data += data
 
-                user_files_manager.InsertFile(file_name,file_size, file_date, serialized_data)
+                user_files_manager.InsertFile(file_name, file_size, file_date, serialized_data)
                 print(f"File '{file_name}' received and saved in the database")
 
             if action == "R":
                 file_name = client_socket.recv(1024).decode()
-                file_path = os.path.join(sub_folder_path, file_name)
-
                 try:
-                    with open(file_path, 'rb') as file:
-                        file_data = file.read()
-                        file_size = str(len(file_data))
-                        client_socket.send(file_size.encode())
 
-                        # Sending the file in chunks using send()
-                        chunk_size = 1024
-                        for i in range(0, len(file_data), chunk_size):
-                            client_socket.send(file_data[i:i + chunk_size])
-                            # Update progress bar for each chunk
-                            if progress_bar:
-                                progress_bar.update(chunk_size)
+                    file_data = user_files_manager.get_file_data(file_name)[0]
 
-                        # Signal the end of data
-                        client_socket.send(b"<END_OF_DATA>")
-                        print(f"File '{file_name}' sent successfully")
+                    file_size = str(user_files_manager.get_file_size(file_name)[0])
+
+                    client_socket.send(file_size).encode()
+
+                    # Sending the file in chunks using send()
+                    chunk_size = 1024
+                    for i in range(0, len(file_data), chunk_size):
+                        client_socket.send(file_data[i:i + chunk_size])
+
+                    # Signal the end of data
+                    client_socket.send(b"<END_OF_DATA>")
+                    print(f"File '{file_name}' sent successfully")
 
                 except FileNotFoundError:
                     print(f"File '{file_name}' not found.")
@@ -122,6 +116,8 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((HOST, PORT))
 server_socket.listen(5)
 print(f"Server listening on {HOST}:{PORT}")
+
+auth = UserAuthentication()
 
 try:
     while True:

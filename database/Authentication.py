@@ -48,6 +48,11 @@ class UserAuthentication:
                                           [email]).fetchone()
         return get_from_query
 
+    def get_username(self, user_id):
+        get_from_query = self.cur.execute("SELECT username FROM Authenticated WHERE id = ?",
+                                          [user_id]).fetchone()
+        return get_from_query[0]
+
     def close_db(self):
         self.conn.close()
 
