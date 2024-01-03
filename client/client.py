@@ -1,3 +1,4 @@
+import pickle
 import socket
 import os
 import re
@@ -59,23 +60,23 @@ try:
                 save_path = input("Enter the path of the save folder: ")
 
                 # sending the requested file name to the server
-                client_socket.send(file_name.encode())
+                file_size = client_socket.recv(1024).decode()
 
-                # receiving the file size from the server
-                file_size = int(client_socket.recv(1024).decode())
+                done_sending = False
+                all_data = b""
+                with open(file_name, 'wb') as file:
+                    while not done_sending:
+                        data = client_socket.recv(2048)
+                        if data[-len(b"<END_OF_DATA>"):] == b"<END_OF_DATA>":
+                            done_sending = True
+                            all_data += data[:-len(b"<END_OF_DATA>")]
+                            serialized_data = pickle.loads(all_data)
+                            file.write(serialized_data)
+                        else:
+                            all_data += data
 
-                if file_size == 0:
-                    print(f"File '{file_name}' not found on the server.")
-                else:
-                    received_data = b""
-                    while len(received_data) < file_size:
-                        chunk = client_socket.recv(1024)
-                        received_data += chunk
+                print(f"File '{file_name}' received and saved in the database")
 
-                    with open(os.path.join(save_path, file_name), 'wb') as file:
-                        file.write(received_data)
-
-                    print(f"File '{file_name}' received successfully.")
 
 except (socket.error, IOError) as e:
     print(f"Error: {e}")

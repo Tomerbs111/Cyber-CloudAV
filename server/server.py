@@ -82,22 +82,22 @@ def handle_requests(client_socket, identifier):
                 print(f"File '{file_name}' received and saved in the database")
 
             if action == "R":
-                file_name = client_socket.recv(1024).decode()
                 try:
-
+                    file_name = client_socket.recv(1024).decode()
                     file_data = user_files_manager.get_file_data(file_name)[0]
-
-                    file_size = str(user_files_manager.get_file_size(file_name)[0])
+                    file_size = user_files_manager.get_file_size(file_name)[0]
 
                     client_socket.send(file_size).encode()
 
-                    # Sending the file in chunks using send()
-                    chunk_size = 1024
-                    for i in range(0, len(file_data), chunk_size):
-                        client_socket.send(file_data[i:i + chunk_size])
+                    client_socket.send(str(file_size).encode())
+                    with open(file_data, 'rb') as file:
+                        while True:
+                            data = file.read(1024)
+                            if not data:
+                                break
+                            client_socket.send(data)
+                        client_socket.send(b"<END_OF_DATA>")
 
-                    # Signal the end of data
-                    client_socket.send(b"<END_OF_DATA>")
                     print(f"File '{file_name}' sent successfully")
 
                 except FileNotFoundError:
