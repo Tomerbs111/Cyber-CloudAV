@@ -2,16 +2,18 @@ import pickle
 import socket
 import os
 import threading
-import tqdm
 from database.Authentication import UserAuthentication
 from database.UserFiles import UserFiles
 from datetime import datetime
+import tqdm
+
 
 HOST = '127.0.0.1'
 PORT = 40302
 
 
 def handle_register_info(client_socket, u_email, u_username, u_password):
+    auth = UserAuthentication()
     try:
         ans = auth.register(u_email, u_username, u_password)
         client_socket.send(ans.encode())
@@ -32,6 +34,7 @@ def handle_register_info(client_socket, u_email, u_username, u_password):
 
 
 def handle_login_info(client_socket, u_email, u_password):
+    auth = UserAuthentication()
     try:
         auth_ans = auth.login(u_email, u_password)
         client_socket.send(auth_ans.encode())
@@ -62,16 +65,12 @@ def handle_requests(client_socket, identifier):
                 print(f"The session with has ended.")
                 break
 
-            progress_bar = None  # Initialize progress_bar outside the block
-
             if action == "S":
                 file_name = client_socket.recv(1024).decode()
                 file_date = datetime.now()
                 file_size = client_socket.recv(1024).decode()
 
                 done_sending = False
-                progress_bar = tqdm.tqdm(unit="B", unit_scale=True, unit_divisor=1000, total=int(file_size))
-
                 all_data = b""
                 while not done_sending:
                     data = client_socket.recv(2048)
@@ -81,9 +80,7 @@ def handle_requests(client_socket, identifier):
                         serialized_data = pickle.dumps(all_data)
                     else:
                         all_data += data
-                    progress_bar.update(len(data))
 
-                progress_bar.close()
                 user_files_manager.InsertFile(file_name,file_size, file_date, serialized_data)
                 print(f"File '{file_name}' received and saved in the database")
 
@@ -118,8 +115,6 @@ def handle_requests(client_socket, identifier):
         print(f"Error: {e}")
 
     finally:
-        if progress_bar:
-            progress_bar.close()
         client_socket.close()
 
 
@@ -127,8 +122,6 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((HOST, PORT))
 server_socket.listen(5)
 print(f"Server listening on {HOST}:{PORT}")
-
-auth = UserAuthentication()
 
 try:
     while True:
