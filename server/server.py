@@ -86,6 +86,9 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
                     file_name = client_socket.recv(1024).decode()
                     file_data = user_files_manager.get_file_data(file_name)
 
+                    if file_data is None:
+                        raise ValueError(f"File '{file_name}' not found or empty")
+
                     current_place = 0
                     while current_place < len(file_data):
                         data = file_data[current_place:current_place + 1024]
@@ -97,6 +100,9 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
                 except FileNotFoundError:
                     print(f"File '{file_name}' not found.")
                     client_socket.send("FILE_NOT_FOUND".encode())
+
+                except ValueError:
+                    print("Couldn't find the data based on the given file name")
 
     except (socket.error, IOError) as e:
         print(f"Error: {e}")

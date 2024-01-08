@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 import sqlite3
@@ -20,7 +21,7 @@ class UserFiles:
         self.cur.execute(create_table_query_files)
         self.conn.commit()
 
-    def InsertFile(self, name: str, size: int, date: str, filebytes: bytes):
+    def InsertFile(self, name: str, size: int, date: datetime, filebytes: bytes):
         insert_file = f'''
         INSERT INTO {self.userid_db} (Name, Size, Date, FileBytes)
         VALUES (?, ?, ?, ?);
