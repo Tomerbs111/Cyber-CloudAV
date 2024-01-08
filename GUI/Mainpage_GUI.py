@@ -30,7 +30,6 @@ class MainPage(CTk):
         self.l_name = CTkLabel(master=self.f_file_tags, text="Name").pack(side='left', padx=30)
         self.l_size = CTkLabel(master=self.f_file_tags, text="Size").pack(side='right', padx=50)
         self.l_modate = CTkLabel(master=self.f_file_tags, text="Last modified").pack(side='right', padx=20)
-        self.l_owner = CTkLabel(master=self.f_file_tags, text="Owner").pack(side='right', padx=40)
 
         self.add_file_btn = CTkButton(master=self.f_file_list, text="add file", command=self.add_file).pack(expand=True,
                                                                                                             fill='x')
@@ -52,11 +51,6 @@ class MainPage(CTk):
             master=file_frame,
             text="1/10/2023"
         ).pack(side='right', padx=43)
-
-        lu_owner = CTkLabel(
-            master=file_frame,
-            text="tomer"
-        ).pack(side='right', padx=30)
 
         # Pack the file_frame into f_file_list
         file_frame.pack(side='top', fill='x')

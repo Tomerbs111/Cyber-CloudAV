@@ -1,6 +1,8 @@
 import socket
 import os
 import threading
+from typing import Any
+
 from database.Authentication import UserAuthentication
 from database.UserFiles import UserFiles
 from datetime import datetime
@@ -9,7 +11,7 @@ HOST = '127.0.0.1'
 PORT = 40303
 
 
-def handle_register_info(client_socket, u_email, u_username, u_password):
+def handle_register_info(client_socket: socket, u_email: str, u_username: str, u_password: str) -> int | str:
     try:
         ans = auth.register(u_email, u_username, u_password)
         client_socket.send(ans.encode())
@@ -29,7 +31,7 @@ def handle_register_info(client_socket, u_email, u_username, u_password):
         client_socket.send("Unexpected error during registration".encode())
 
 
-def handle_login_info(client_socket, u_email, u_password):
+def handle_login_info(client_socket: socket, u_email: str, u_password: str) -> str | None:
     auth = UserAuthentication()
     try:
         auth_ans = auth.login(u_email, u_password)
@@ -51,14 +53,14 @@ def handle_login_info(client_socket, u_email, u_password):
         return "<FAILED>"
 
 
-def handle_requests(client_socket, identifier):
+def handle_requests(client_socket: socket, identifier: int) -> None:
     try:
         while True:
-            user_files_manager = UserFiles(identifier)
+            user_files_manager = UserFiles(f'u_{identifier}')
             action = client_socket.recv(1024).decode()
 
             if action == "SIGN OUT":
-                print(f"{auth.get_username(identifier)} has signed out.")
+                print(f"User {identifier} has signed out.")
                 break
 
             if action == "S":
@@ -84,12 +86,13 @@ def handle_requests(client_socket, identifier):
                     file_name = client_socket.recv(1024).decode()
                     file_data = user_files_manager.get_file_data(file_name)
 
-                    if file_data:
-                        client_socket.send(file_data)
-                        print(f"File '{file_name}' sent successfully")
-                    else:
-                        print(f"File '{file_name}' not found.")
-                        client_socket.send("FILE_NOT_FOUND".encode())
+                    current_place = 0
+                    while current_place < len(file_data):
+                        data = file_data[current_place:current_place + 1024]
+                        client_socket.send(data)
+                        current_place += 1024
+                    client_socket.send(b"<END_OF_DATA>")
+                    print(f"File '{file_name}' sent successfully")
 
                 except FileNotFoundError:
                     print(f"File '{file_name}' not found.")

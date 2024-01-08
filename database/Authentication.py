@@ -6,6 +6,16 @@ class UserAuthentication:
     def __init__(self, database_path='../database/User_info.db'):
         self.conn = sqlite3.connect(database_path)
         self.cur = self.conn.cursor()
+        create_table_query_users = '''
+        CREATE TABLE IF NOT EXISTS Authenticated (
+            id INTEGER PRIMARY KEY,
+            email TEXT NOT NULL,
+            username TEXT NOT NULL,
+            password TEXT NOT NULL
+        );
+        '''
+        self.cur.execute(create_table_query_users)
+        self.conn.commit()
 
     def _email_exists(self, email):
         query = "SELECT * FROM Authenticated WHERE LOWER(email)=?"

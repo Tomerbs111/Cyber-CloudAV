@@ -62,14 +62,18 @@ try:
                 # sending the requested file name to the server
                 client_socket.send(file_name.encode())
 
-                done_sending = False
-                with open(save_path + '/' + file_name, 'wb') as file:
+                with open(os.path.join(save_path, file_name), 'wb') as file:
+                    done_sending = False
+                    received_data = b""
                     while not done_sending:
-                        recived_file_data = client_socket.recv(1024)
-                        if not recived_file_data:
+                        data = client_socket.recv(1024)
+                        if data[-len(b"<END_OF_DATA>"):] == b"<END_OF_DATA>":
                             done_sending = True
+                            file.write(data[:-len(b"<END_OF_DATA>")])
                         else:
-                            file.write(recived_file_data)
+                            file.write(data)
+
+                print(f"File '{file_name}' received successfully.")
 
 
 except (socket.error, IOError) as e:
