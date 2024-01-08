@@ -7,7 +7,7 @@ from database.UserFiles import UserFiles
 from datetime import datetime
 import sqlite3
 
-database_path = 'database/User_info.db'
+database_path = 'User_info.db'
 conn = sqlite3.connect(database_path)
 cur = conn.cursor()
 

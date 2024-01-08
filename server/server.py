@@ -1,4 +1,3 @@
-import pickle
 import socket
 import os
 import threading
@@ -70,39 +69,30 @@ def handle_requests(client_socket, identifier):
                 done_sending = False
                 all_data = b""
                 while not done_sending:
-                    data = client_socket.recv(2048)
+                    data = client_socket.recv(1024)
                     if data[-len(b"<END_OF_DATA>"):] == b"<END_OF_DATA>":
                         done_sending = True
                         all_data += data[:-len(b"<END_OF_DATA>")]
-                        serialized_data = pickle.dumps(all_data)
                     else:
                         all_data += data
 
-                user_files_manager.InsertFile(file_name, file_size, file_date, serialized_data)
+                user_files_manager.InsertFile(file_name, file_size, file_date, all_data)
                 print(f"File '{file_name}' received and saved in the database")
 
             if action == "R":
                 try:
                     file_name = client_socket.recv(1024).decode()
-                    file_data = user_files_manager.get_file_data(file_name)[0]
-                    file_size = user_files_manager.get_file_size(file_name)[0]
+                    file_data = user_files_manager.get_file_data(file_name)
 
-                    client_socket.send(file_size).encode()
-
-                    client_socket.send(str(file_size).encode())
-                    with open(file_data, 'rb') as file:
-                        while True:
-                            data = file.read(1024)
-                            if not data:
-                                break
-                            client_socket.send(data)
-                        client_socket.send(b"<END_OF_DATA>")
-
-                    print(f"File '{file_name}' sent successfully")
+                    if file_data:
+                        client_socket.send(file_data)
+                        print(f"File '{file_name}' sent successfully")
+                    else:
+                        print(f"File '{file_name}' not found.")
+                        client_socket.send("FILE_NOT_FOUND".encode())
 
                 except FileNotFoundError:
                     print(f"File '{file_name}' not found.")
-                    # Optionally, you can notify the client about the file not found.
                     client_socket.send("FILE_NOT_FOUND".encode())
 
     except (socket.error, IOError) as e:

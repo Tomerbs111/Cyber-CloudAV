@@ -44,7 +44,7 @@ try:
 
                 with open(file_path, 'rb') as file:
                     while True:
-                        data = file.read(1024)
+                        data = file.read()
                         if not data:
                             break
                         client_socket.send(data)
@@ -60,22 +60,16 @@ try:
                 save_path = input("Enter the path of the save folder: ")
 
                 # sending the requested file name to the server
-                file_size = client_socket.recv(1024).decode()
+                client_socket.send(file_name.encode())
 
                 done_sending = False
-                all_data = b""
-                with open(file_name, 'wb') as file:
+                with open(save_path + '/' + file_name, 'wb') as file:
                     while not done_sending:
-                        data = client_socket.recv(2048)
-                        if data[-len(b"<END_OF_DATA>"):] == b"<END_OF_DATA>":
+                        recived_file_data = client_socket.recv(1024)
+                        if not recived_file_data:
                             done_sending = True
-                            all_data += data[:-len(b"<END_OF_DATA>")]
-                            serialized_data = pickle.loads(all_data)
-                            file.write(serialized_data)
                         else:
-                            all_data += data
-
-                print(f"File '{file_name}' received and saved in the database")
+                            file.write(recived_file_data)
 
 
 except (socket.error, IOError) as e:
