@@ -1,7 +1,5 @@
-import pickle
 import socket
 import os
-import re
 from GUI.Registration_GUI import RegistrationApp
 
 HOST = '127.0.0.1'
