@@ -1,55 +1,26 @@
-import tkinter as tk
-from customtkinter import *
-from tkinter import filedialog as fd
-import os
-from datetime import datetime
+msg = "tomerbs1810@gmail.com"
 
 
-# create the root window
-root = CTk()
-root.title('Tkinter Open File Dialog')
-root.resizable(False, False)
-root.geometry('300x150')
+def add_chars_to_msg(msg):
+    data = b""
+    if len(msg.encode()) < 320:
+        data += msg.encode()
+        for i in range(320 - len(msg.encode())):
+            data += '|'.encode()
+
+    return data
 
 
-def format_file_size(file_size_bytes):
-    if file_size_bytes < 1024:
-        return f"{file_size_bytes} bytes"
-    elif file_size_bytes < 1024 ** 2:
-        return f"{file_size_bytes / 1024:.2f} KB"
-    elif file_size_bytes < 1024 ** 3:
-        return f"{file_size_bytes / (1024 ** 2):.2f} MB"
-    else:
-        return f"{file_size_bytes / (1024 ** 3):.2f} GB"
+def remove_added_chars(msg):
+    og_data = str(msg.decode())
+    filtered_data = og_data.replace("|", "")
+    return filtered_data
 
 
-def select_file():
-    filetypes = (
-        ('text files', '*.txt'),
-        ('All files', '*.*')
-    )
+if __name__ == "__main__":
+    msg = "tomerbs1810@gmail.com"
+    ans_func1 = add_chars_to_msg(msg)
+    print(ans_func1)
 
-    filename = fd.askopenfilename(
-        title='Select a file',
-        initialdir='/',
-        filetypes=filetypes)
-
-    file_size = format_file_size(os.path.getsize(filename))
-    file_date = datetime.now().strftime("%m/%d/%Y")
-
-
-btn_fd = CTkButton(
-    master=root,
-    text="select a file",
-    command=select_file
-)
-ans = CTkLabel(
-    master=root,
-    text=""
-)
-
-btn_fd.pack()
-ans.pack()
-
-# run the application
-root.mainloop()
+    ans_func2 = remove_added_chars(ans_func1)
+    print(ans_func2)

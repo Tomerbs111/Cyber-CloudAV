@@ -1,3 +1,4 @@
+import pickle
 import socket
 import os
 import threading
@@ -9,6 +10,12 @@ from datetime import datetime
 
 HOST = '127.0.0.1'
 PORT = 40303
+
+
+def remove_added_chars(msg) -> str:
+    og_data = str(msg.decode())
+    filtered_data = og_data.replace("|", "")
+    return filtered_data
 
 
 def handle_register_info(client_socket: socket, u_email: str, u_username: str, u_password: str) -> int | str:
@@ -57,17 +64,22 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
     try:
         while True:
             user_files_manager = UserFiles(f'u_{identifier}')
-            action = client_socket.recv(1024).decode()
+            action = client_socket.recv(8).decode()
 
-            if action == "SIGN OUT":
+            if action == "X":
                 print(f"User {identifier} has signed out.")
                 break
 
             if action == "S":
-                file_name = client_socket.recv(1024).decode()
-                file_date = datetime.now()
-                file_size = client_socket.recv(1024).decode()
+                # server is getting the file properties to write in db
+                file_prop_lst = pickle.loads(client_socket.recv(1024))
 
+                file_name = file_prop_lst[0]
+                file_size = file_prop_lst[1]
+                file_date = file_prop_lst[2]
+                client_socket.send(b"<GOT_PROP>")
+
+                # server god all the properties
                 done_sending = False
                 all_data = b""
                 while not done_sending:
@@ -128,15 +140,16 @@ try:
         while True:
             u_status = client_socket.recv(1024).decode()
             if u_status == "<REGISTER>":
-                u_email = client_socket.recv(1024).decode()
-                u_username = client_socket.recv(1024).decode()
-                u_password = client_socket.recv(1024).decode()
+
+                u_email = remove_added_chars(client_socket.recv(320))
+                u_username = remove_added_chars(client_socket.recv(320))
+                u_password = remove_added_chars(client_socket.recv(320))
 
                 identifier = handle_register_info(client_socket, u_email, u_username, u_password)
 
             elif u_status == "<LOGIN>":
-                u_email = client_socket.recv(100).decode()
-                u_password = client_socket.recv(100).decode()
+                u_email = remove_added_chars(client_socket.recv(320))
+                u_password = remove_added_chars(client_socket.recv(320))
 
                 identifier = handle_login_info(client_socket, u_email, u_password)
 
