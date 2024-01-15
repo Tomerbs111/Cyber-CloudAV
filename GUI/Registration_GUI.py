@@ -1,3 +1,5 @@
+import pickle
+
 from customtkinter import *
 import packaging
 import re
@@ -13,8 +15,6 @@ class RegistrationApp(CTk):
         self.login_frame.pack(side="top", fill="both", expand=True)
 
         self.register_frame = CTkFrame(master=self)
-
-
 
         # Instance variables for all answers
         self.ans_password = None
@@ -43,8 +43,6 @@ class RegistrationApp(CTk):
         self.setup_submit_button(self.login_frame, "Sign in", 0.02, 0.5, self.l_when_submit)
         self.setup_confirmation_label(self.login_frame, 0.6)
         self.setup_switch_button(self.login_frame, "want to register?", 0.25, 0.5, self.switch_to_registration)
-
-
 
     def switch_to_registration(self):
         self.register_frame = CTkFrame(master=self)
@@ -204,9 +202,14 @@ class RegistrationApp(CTk):
                 print(f"Password: {u_password}")
                 print("---------------------------------")
 
-                self.client_socket.send(u_email.encode())
-                self.client_socket.send(u_username.encode())
-                self.client_socket.send(u_password.encode())
+                field_dict = {
+                    'email': u_email,
+                    'username': u_username,
+                    'password': u_password,
+                }
+
+                self.client_socket.send(pickle.dumps(field_dict))
+
 
                 self.server_reg_ans = self.client_socket.recv(1024).decode()
                 print(f"answer: {self.server_reg_ans}")
@@ -246,8 +249,13 @@ class RegistrationApp(CTk):
                 print(f"Email: {u_email}")
                 print(f"Password: {u_password}")
                 print("---------------------------------")
-                self.client_socket.send(u_email.encode())
-                self.client_socket.send(u_password.encode())
+
+                field_dict = {
+                    'email': u_email,
+                    'password': u_password
+                }
+
+                self.client_socket.send(pickle.dumps(field_dict))
 
                 self.server_login_ans = self.client_socket.recv(1024).decode()
                 print(f"answer: {self.server_login_ans}")
@@ -263,4 +271,3 @@ class RegistrationApp(CTk):
                 else:
                     self.l_confirm.configure(text=f"Welcome back {self.server_login_ans}")
                     self.auth_completed = True
-

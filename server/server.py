@@ -12,12 +12,6 @@ HOST = '127.0.0.1'
 PORT = 40303
 
 
-def remove_added_chars(msg) -> str:
-    og_data = str(msg.decode())
-    filtered_data = og_data.replace("|", "")
-    return filtered_data
-
-
 def handle_register_info(client_socket: socket, u_email: str, u_username: str, u_password: str) -> int | str:
     try:
         ans = auth.register(u_email, u_username, u_password)
@@ -140,16 +134,18 @@ try:
         while True:
             u_status = client_socket.recv(1024).decode()
             if u_status == "<REGISTER>":
-
-                u_email = remove_added_chars(client_socket.recv(320))
-                u_username = remove_added_chars(client_socket.recv(320))
-                u_password = remove_added_chars(client_socket.recv(320))
+                field_dict = pickle.loads(client_socket.recv(1024))
+                u_email = field_dict['email']
+                u_username = field_dict['username']
+                u_password = field_dict['password']
 
                 identifier = handle_register_info(client_socket, u_email, u_username, u_password)
 
             elif u_status == "<LOGIN>":
-                u_email = remove_added_chars(client_socket.recv(320))
-                u_password = remove_added_chars(client_socket.recv(320))
+                field_dict = pickle.loads(client_socket.recv(1024))
+                u_email = field_dict['email']
+                u_password = field_dict['password']
+
 
                 identifier = handle_login_info(client_socket, u_email, u_password)
 

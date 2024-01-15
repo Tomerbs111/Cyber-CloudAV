@@ -20,9 +20,8 @@ try:
             client_socket.send("X".encode())
             client_socket.close()
             break
-
-
 except (socket.error, IOError) as e:
     print(f"Error: {e}")
 finally:
     client_socket.close()
+

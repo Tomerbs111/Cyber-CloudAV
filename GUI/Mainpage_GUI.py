@@ -1,9 +1,54 @@
 import pickle
-from customtkinter import *
-import os
+import random
+from typing import Any
 from tkinter import filedialog as fd
 from datetime import datetime
+import os
 import socket
+
+import customtkinter
+from customtkinter import *
+
+
+class FileFrame(CTkFrame):
+    def __init__(self, fname, fsize, fdate, master: Any, **kwargs):
+        super().__init__(master, **kwargs)
+        self.id_of_frame = random.randint(1, 100)
+        self.fname = fname
+        self.fsize = fsize
+        self.fdate = fdate
+
+        lu_filename = CTkLabel(
+            master=self,
+            text=self.fname
+        )
+        lu_filename.pack(side='left', padx=30)
+
+        lu_size = CTkLabel(
+            master=self,
+            text=self.fsize
+        )
+        lu_size.pack(side='right', padx=27)
+
+        lu_date_mod = CTkLabel(
+            master=self,
+            text=self.fdate
+        )
+        lu_date_mod.pack(side='right', padx=43)
+
+        self.check_var = customtkinter.StringVar(value="off")
+        self.mark_for_action = customtkinter.CTkCheckBox(self, text="",
+                                                         variable=self.check_var, onvalue="on", offvalue="off")
+        self.mark_for_action.pack(side='left')
+
+    def get_checkvar(self) -> bool:
+        return self.check_var.get() == "on"
+
+    def get_filename(self):
+        return self.fname
+
+    def uncheck(self):
+        self.check_var.set("off")
 
 
 class MainPage(CTk):
@@ -16,6 +61,9 @@ class MainPage(CTk):
         self.f_data_center = None
         self.f_file_tags = None
         self.f_file_list = None
+        self.file_frames = []  # List to store FileFrame instances
+        self.file_frame_counter = 0
+        self.save_path = None
 
         # Call the setup functions
         self.setup_action_frame()
@@ -57,6 +105,9 @@ class MainPage(CTk):
         add_file_btn = (CTkButton(master=self.f_file_list, text="add file", command=self.add_file)
                         .pack(expand=True, fill='x'))
 
+        process_checked_file_frames = (CTkButton(master=self.f_file_list, text="get results",
+                                                 command=self.get_save_path_dialog).pack(expand=True, fill='x'))
+
     @staticmethod
     def format_file_size(file_size_bytes):
         if file_size_bytes < 1024:
@@ -69,67 +120,94 @@ class MainPage(CTk):
             return f"{file_size_bytes / (1024 ** 3):.2f} GB"
 
     def add_file(self):
-        self.client_socket.send("S".encode())
-        try:
-            filetypes = (
-                ('text files', '*.txt'),
-                ('All files', '*.*')
-            )
+        if self.save_path is None:
+            self.get_save_path_dialog()
+        else:
+            self.client_socket.send("S".encode())
+            try:
+                filetypes = (
+                    ('text files', '*.txt'),
+                    ('All files', '*.*')
+                )
 
-            file_name = fd.askopenfilename(
-                title='Select a file',
-                initialdir='/',
-                filetypes=filetypes)
+                file_name = fd.askopenfilename(
+                    title='Select a file',
+                    initialdir='/',
+                    filetypes=filetypes)
 
-            # getting all the file properties needed for the server to handle
-            file_bytes = os.path.getsize(file_name)
-            short_filename = os.path.basename(file_name)
-            file_date = datetime.now()
+                # getting all the file properties needed for the server to handle
+                file_bytes = os.path.getsize(file_name)
+                short_filename = os.path.basename(file_name)
+                file_date = datetime.now()
 
-            file_size = self.format_file_size(file_bytes)
-            short_file_date = file_date.strftime("%m/%d/%Y")
-            self.client_socket.send(pickle.dumps([short_filename, file_bytes, file_date]))
-            serv_ans = self.client_socket.recv(72).decode()
+                file_size = self.format_file_size(file_bytes)
+                short_file_date = file_date.strftime("%m/%d/%Y")
+                self.client_socket.send(pickle.dumps([short_filename, file_bytes, file_date]))
+                serv_ans = self.client_socket.recv(72).decode()
 
-            # the file will start to send after the OK flag has been raised
-            if serv_ans == "<GOT_PROP>":
-                with open(file_name, 'rb') as file:
-                    while True:
-                        data = file.read()
-                        if not data:
-                            break
-                        self.client_socket.send(data)
+                # the file will start to send after the OK flag has been raised
+                if serv_ans == "<GOT_PROP>":
+                    with open(file_name, 'rb') as file:
+                        while True:
+                            data = file.read()
+                            if not data:
+                                break
+                            self.client_socket.send(data)
 
-                    # Signal the end of data
-                    self.client_socket.send(b"<END_OF_DATA>")
-                    print(f"File '{file_name}' sent successfully")
+                        # Signal the end of data
+                        self.client_socket.send(b"<END_OF_DATA>")
+                        print(f"File '{file_name}' sent successfully")
 
-                # adding the file to the gui
-                self.add_file_frame(short_filename, file_size, short_file_date)
+                    # adding the file to the gui
+                    self.add_file_frame(short_filename, file_size, short_file_date)
 
-        except FileNotFoundError:  # in cases of an error
-            return
+            except FileNotFoundError:  # in cases of an error
+                return
 
-    def add_file_frame(self, file_name, file_size, file_date):
-        file_frame = CTkFrame(master=self.f_file_list)
+    def add_file_frame(self, file_name="hello.exe", file_size="100GB", file_date="10/1/12"):
+        file_frame = FileFrame(file_name, file_size, file_date, master=self.f_file_list)
+        file_frame.pack(expand=True, fill='x', side='top')
+        self.file_frames.append(file_frame)  # Add FileFrame instance to the list
+        self.file_frame_counter += 1
 
-        lu_filename = CTkLabel(
-            master=file_frame,
-            text=file_name
-        ).pack(side='left', padx=20)
+    def checked_file_frames(self):
+        checked_file_frames_list = []
+        for file_frame in self.file_frames:
+            if file_frame.get_checkvar():
+                checked_file_frames_list.append(file_frame.get_filename())
+                file_frame.uncheck()  # Uncheck the checkbox
 
-        lu_size = CTkLabel(
-            master=file_frame,
-            text=file_size
-        ).pack(side='right', padx=27)
+        return checked_file_frames_list
 
-        lu_date_mod = CTkLabel(
-            master=file_frame,
-            text=file_date
-        ).pack(side='right', padx=43)
+    def receive_checked_files(self):
+        if self.save_path is None:
+            self.get_save_path_dialog()
+        else:
+            lst_of_fnames = self.checked_file_frames()
+            for file_name in lst_of_fnames:
+                self.client_socket.send("R".encode())
+                file_name = lst_of_fnames[file_name]
 
-        # Pack the file_frame into f_file_list
-        file_frame.pack(side='top', fill='x')
+                # sending the requested file name to the server
+                self.client_socket.send(file_name.encode())
+
+                with open(os.path.join(self.save_path, file_name), 'wb') as file:
+                    done_sending = False
+                    received_data = b""
+                    while not done_sending:
+                        data = self.client_socket.recv(1024)
+                        if data[-len(b"<END_OF_DATA>"):] == b"<END_OF_DATA>":
+                            done_sending = True
+                            file.write(data[:-len(b"<END_OF_DATA>")])
+                        else:
+                            file.write(data)
+
+                print(f"File '{file_name}' received successfully.")
+
+    def get_save_path_dialog(self):
+        dialog = customtkinter.CTkInputDialog(text="Write the path you want to save your files on:", title="Get save "
+                                                                                                           "path")
+        self.save_path = dialog.get_input()
 
 
 if __name__ == "__main__":
