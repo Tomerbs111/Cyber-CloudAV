@@ -8,7 +8,7 @@ from database.Authentication import UserAuthentication
 from database.UserFiles import UserFiles
 from datetime import datetime
 
-HOST = '127.0.0.1'
+HOST = '0.0.0.0'
 PORT = 40303
 
 
@@ -93,13 +93,15 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
                     file_data = user_files_manager.get_file_data(file_name)
 
                     if file_data is None:
-                        raise ValueError(f"File '{file_name}' not found or empty")
+                        raise FileNotFoundError(f"File '{file_name}' not found or empty")
 
                     current_place = 0
                     while current_place < len(file_data):
                         data = file_data[current_place:current_place + 1024]
                         client_socket.send(data)
                         current_place += 1024
+
+                    # Ensure that the string "<END_OF_DATA>" is sent as bytes
                     client_socket.send(b"<END_OF_DATA>")
                     print(f"File '{file_name}' sent successfully")
 
@@ -107,8 +109,9 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
                     print(f"File '{file_name}' not found.")
                     client_socket.send("FILE_NOT_FOUND".encode())
 
-                except ValueError:
-                    print("Couldn't find the data based on the given file name")
+                except Exception as e:
+                    print(f"Error while sending file '{file_name}': {e}")
+                    client_socket.send("ERROR_SENDING_FILE".encode())
 
     except (socket.error, IOError) as e:
         print(f"Error: {e}")
@@ -133,6 +136,7 @@ try:
 
         while True:
             u_status = client_socket.recv(1024).decode()
+            client_socket.send(b'<ACK>')
             if u_status == "<REGISTER>":
                 field_dict = pickle.loads(client_socket.recv(1024))
                 u_email = field_dict['email']
@@ -145,7 +149,6 @@ try:
                 field_dict = pickle.loads(client_socket.recv(1024))
                 u_email = field_dict['email']
                 u_password = field_dict['password']
-
 
                 identifier = handle_login_info(client_socket, u_email, u_password)
 

@@ -64,7 +64,6 @@ class MainPage(CTk):
         self.file_frames = []  # List to store FileFrame instances
         self.file_frame_counter = 0
         self.save_path = None
-
         # Call the setup functions
         self.setup_action_frame()
         self.setup_data_center_frame()
@@ -106,7 +105,7 @@ class MainPage(CTk):
                         .pack(expand=True, fill='x'))
 
         process_checked_file_frames = (CTkButton(master=self.f_file_list, text="get results",
-                                                 command=self.get_save_path_dialog).pack(expand=True, fill='x'))
+                                                 command=self.receive_checked_files).pack(expand=True, fill='x'))
 
     @staticmethod
     def format_file_size(file_size_bytes):
@@ -122,7 +121,6 @@ class MainPage(CTk):
     def add_file(self):
         if self.save_path is None:
             self.get_save_path_dialog()
-        else:
             self.client_socket.send("S".encode())
             try:
                 filetypes = (
@@ -184,25 +182,27 @@ class MainPage(CTk):
             self.get_save_path_dialog()
         else:
             lst_of_fnames = self.checked_file_frames()
+            print(lst_of_fnames)
             for file_name in lst_of_fnames:
-                self.client_socket.send("R".encode())
-                file_name = lst_of_fnames[file_name]
+                try:
+                    self.client_socket.send("R".encode())
+                    self.client_socket.send(pickle.dumps(file_name))  # Send the serialized file name
 
-                # sending the requested file name to the server
-                self.client_socket.send(file_name.encode())
+                    file_path = os.path.join(self.save_path, file_name)
 
-                with open(os.path.join(self.save_path, file_name), 'wb') as file:
-                    done_sending = False
-                    received_data = b""
-                    while not done_sending:
-                        data = self.client_socket.recv(1024)
-                        if data[-len(b"<END_OF_DATA>"):] == b"<END_OF_DATA>":
-                            done_sending = True
-                            file.write(data[:-len(b"<END_OF_DATA>")])
-                        else:
+                    with open(file_path, 'wb') as file:
+                        while True:
+                            data = self.client_socket.recv(1024)
+                            if not data:
+                                break
                             file.write(data)
+                            if data.endswith(b"<END_OF_DATA>"):
+                                break
 
-                print(f"File '{file_name}' received successfully.")
+                    print(f"File '{file_name}' received successfully.")
+                except Exception as e:
+                    print(f"Error while receiving file '{file_name}': {e}")
+                    # Handle the error appropriately, show a message to the user
 
     def get_save_path_dialog(self):
         dialog = customtkinter.CTkInputDialog(text="Write the path you want to save your files on:", title="Get save "

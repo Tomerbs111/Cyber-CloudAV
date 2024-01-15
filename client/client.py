@@ -3,7 +3,7 @@ import os
 from GUI.Registration_GUI import RegistrationApp
 from GUI.Mainpage_GUI import MainPage
 
-HOST = '127.0.0.1'
+HOST = '10.10.11.135'
 PORT = 40303
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

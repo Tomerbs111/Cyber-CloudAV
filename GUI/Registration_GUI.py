@@ -1,4 +1,5 @@
 import pickle
+import time
 
 from customtkinter import *
 import packaging
@@ -210,7 +211,6 @@ class RegistrationApp(CTk):
 
                 self.client_socket.send(pickle.dumps(field_dict))
 
-
                 self.server_reg_ans = self.client_socket.recv(1024).decode()
                 print(f"answer: {self.server_reg_ans}")
 
@@ -243,6 +243,7 @@ class RegistrationApp(CTk):
 
         if checksum == 2:
             self.client_socket.send(self.attempt_type.encode())
+            time.sleep(1)
 
             if self.attempt_type == "<LOGIN>":
                 print("User info -----------------------")
@@ -255,7 +256,7 @@ class RegistrationApp(CTk):
                     'password': u_password
                 }
 
-                self.client_socket.send(pickle.dumps(field_dict))
+                self.client_socket.sendall(pickle.dumps(field_dict))
 
                 self.server_login_ans = self.client_socket.recv(1024).decode()
                 print(f"answer: {self.server_login_ans}")
