@@ -8,7 +8,7 @@ from database.Authentication import UserAuthentication
 from database.UserFiles import UserFiles
 from datetime import datetime
 
-HOST = '0.0.0.0'
+HOST = '127.0.0.1'
 PORT = 40303
 
 
@@ -41,7 +41,7 @@ def handle_login_info(client_socket: socket, u_email: str, u_password: str) -> s
             print("Login failed. No accounts under the provided email.")
             return
         elif auth_ans == "<WRONG_PASSWORD>":
-            print("Login failed. Password doesn't match to the provided email.")
+            print("Login failed. Password doesn't match the provided email.")
             return
         else:
             print("User logged in Successfully")
@@ -56,9 +56,15 @@ def handle_login_info(client_socket: socket, u_email: str, u_password: str) -> s
 
 def handle_requests(client_socket: socket, identifier: int) -> None:
     try:
+        # Send presaved files data to the client first
+        send_presaved_files_to_client(client_socket, identifier)
         while True:
             user_files_manager = UserFiles(f'u_{identifier}')
-            action = client_socket.recv(8).decode()
+            action = client_socket.recv(32).decode()
+            if action == "<OK>":
+                client_socket.sendall(b"<READY_FOR_PRESAVED_FILES>")
+                # Process presaved files and send them to the client
+                send_presaved_files_to_client(client_socket, identifier)
 
             if action == "X":
                 print(f"User {identifier} has signed out.")
@@ -73,7 +79,7 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
                 file_date = file_prop_lst[2]
                 client_socket.send(b"<GOT_PROP>")
 
-                # server god all the properties
+                # server got all the properties
                 done_sending = False
                 all_data = b""
                 while not done_sending:
@@ -120,23 +126,21 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
         client_socket.close()
 
 
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((HOST, PORT))
-server_socket.listen(5)
-print(f"Server listening on {HOST}:{PORT}")
+def send_presaved_files_to_client(client_socket, identifier):
+    try:
+        user_files_manager = UserFiles(f'u_{identifier}')
+        presaved_files_dict = user_files_manager.get_all_data(identifier)
 
-auth = UserAuthentication()
+        # Send the presaved files dictionary to the client
+        client_socket.sendall(pickle.dumps(presaved_files_dict))
+    except Exception as e:
+        print(f"Error sending presaved files data to client: {e}")
 
-try:
-    while True:
-        client_socket, client_address = server_socket.accept()
-        print(f"Accepted connection from {client_address}")
 
-        identifier = None  # Initialize identifier outside the loop
-
+def handle_register_login(client_socket, identifier):
+    try:
         while True:
             u_status = client_socket.recv(1024).decode()
-            client_socket.send(b'<ACK>')
             if u_status == "<REGISTER>":
                 field_dict = pickle.loads(client_socket.recv(1024))
                 u_email = field_dict['email']
@@ -155,8 +159,35 @@ try:
             if identifier and identifier != "<EXISTS>":
                 # Start a new thread to handle the client
                 client_handler = threading.Thread(target=handle_requests, args=(client_socket, identifier))
+
                 client_handler.start()
-                break  # Break out of the inner loop if registration is successful
+                break  # Break out of the inner loop if registration or login is successful
+
+    except (socket.error, IOError) as e:
+        print(f"Error: {e}")
+
+    finally:
+        client_socket.close()
+
+
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((HOST, PORT))
+server_socket.listen(5)
+print(f"Server listening on {HOST}:{PORT}")
+
+auth = UserAuthentication()
+
+try:
+    while True:
+        client_socket, client_address = server_socket.accept()
+        print(f"Accepted connection from {client_address}")
+
+        identifier = None  # Initialize identifier outside the loop
+
+        # Start a new thread to handle registration or login
+        client_register_login_handler = threading.Thread(target=handle_register_login,
+                                                         args=(client_socket, identifier))
+        client_register_login_handler.start()
 
 except KeyboardInterrupt:
     print("Server terminated by user.")

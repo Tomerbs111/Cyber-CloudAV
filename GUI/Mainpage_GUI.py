@@ -71,6 +71,13 @@ class MainPage(CTk):
         self.setup_file_tags_frame()
         self.setup_file_list_frame()
 
+        # after the setup is complete the client will load all files
+        acknowledgment = self.get_acknowledgment_from_server()
+        if acknowledgment == "<OK>":
+            self.setup_presaved_files_frame()
+        else:
+            print(f"Unexpected acknowledgment from server: {acknowledgment}")
+
     def setup_action_frame(self):
         # Code for setting up the Action frame
         f_actions = CTkFrame(master=self)
@@ -162,7 +169,7 @@ class MainPage(CTk):
             except FileNotFoundError:  # in cases of an error
                 return
 
-    def add_file_frame(self, file_name="hello.exe", file_size="100GB", file_date="10/1/12"):
+    def add_file_frame(self, file_name, file_size, file_date):
         file_frame = FileFrame(file_name, file_size, file_date, master=self.f_file_list)
         file_frame.pack(expand=True, fill='x', side='top')
         self.file_frames.append(file_frame)  # Add FileFrame instance to the list
@@ -208,6 +215,26 @@ class MainPage(CTk):
         dialog = customtkinter.CTkInputDialog(text="Write the path you want to save your files on:", title="Get save "
                                                                                                            "path")
         self.save_path = dialog.get_input()
+
+    def setup_presaved_files_frame(self):
+        try:
+            presaved_dict = pickle.loads(self.client_socket.recv(4096))  # Adjust buffer size as needed
+
+            for key, value in presaved_dict.items():
+                self.add_file_frame(key, self.format_file_size(value[0]), value[1])
+        except EOFError:
+            print("No presaved files data received.")
+        except Exception as e:
+            print(f"Error setting up presaved files frame: {e}")
+
+    def get_acknowledgment_from_server(self):
+        try:
+            self.client_socket.sendall(b"<OK>")
+            acknowledgment = self.client_socket.recv(1024).decode()  # Add error handling if needed
+            return acknowledgment
+        except Exception as e:
+            print(f"Error getting acknowledgment from server: {e}")
+            return None
 
 
 if __name__ == "__main__":

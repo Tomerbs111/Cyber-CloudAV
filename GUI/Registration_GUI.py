@@ -193,7 +193,7 @@ class RegistrationApp(CTk):
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 3:
-            self.client_socket.send(self.attempt_type.encode())
+            self.client_socket.sendall(self.attempt_type.encode())
             print("status sent")
 
             if self.attempt_type == "<REGISTER>":
@@ -209,7 +209,7 @@ class RegistrationApp(CTk):
                     'password': u_password,
                 }
 
-                self.client_socket.send(pickle.dumps(field_dict))
+                self.client_socket.sendall(pickle.dumps(field_dict))
 
                 self.server_reg_ans = self.client_socket.recv(1024).decode()
                 print(f"answer: {self.server_reg_ans}")
@@ -242,8 +242,7 @@ class RegistrationApp(CTk):
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 2:
-            self.client_socket.send(self.attempt_type.encode())
-            time.sleep(1)
+            self.client_socket.sendall(self.attempt_type.encode())
 
             if self.attempt_type == "<LOGIN>":
                 print("User info -----------------------")
