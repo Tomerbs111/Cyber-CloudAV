@@ -1,3 +1,4 @@
+import os
 import pickle
 import random
 import re
@@ -6,22 +7,24 @@ from typing import Any
 from tkinter import filedialog as fd
 from datetime import datetime
 import socket
-from tkinter import *
-from tkinter import ttk
 import customtkinter
 from customtkinter import *
+import tkinter as tk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+from ttkbootstrap.scrolled import ScrolledFrame
 
 
-class RegistrationApp(CTkFrame):
+class RegistrationApp(ttk.Frame):
     def __init__(self, parent, client_socket: socket, switch_callback):
         super().__init__(parent)
         self.parent_app = parent
         self.switch_callback = switch_callback
 
-        self.login_frame = CTkFrame(master=self)
+        self.login_frame = ttk.Frame(master=self)
         self.login_frame.pack(side="top", fill="both", expand=True)
 
-        self.register_frame = CTkFrame(master=self)
+        self.register_frame = ttk.Frame(master=self)
 
         # Instance variables for all answers
         self.ans_password = None
@@ -52,7 +55,7 @@ class RegistrationApp(CTkFrame):
         self.setup_switch_button(self.login_frame, "want to register?", 0.25, 0.5, self.switch_to_registration)
 
     def switch_to_registration(self):
-        self.register_frame = CTkFrame(master=self)
+        self.register_frame = ttk.Frame(master=self)
         self.setup_welcome(self.register_frame, "Welcome to CloudAV")
         self.setup_email(self.register_frame)
         self.setup_username(self.register_frame)
@@ -66,7 +69,7 @@ class RegistrationApp(CTkFrame):
         self.attempt_type = "<REGISTER>"
 
     def switch_to_login(self):
-        self.login_frame = CTkFrame(master=self)
+        self.login_frame = ttk.Frame(master=self)
         self.setup_welcome(self.login_frame, "Welcome back to CloudAV")
         self.setup_email(self.login_frame)
         self.setup_password(self.login_frame, 0.02, 0.3)
@@ -81,7 +84,7 @@ class RegistrationApp(CTkFrame):
     @staticmethod
     def setup_welcome(master, welcome_msg):
         set_appearance_mode("system")
-        welcome = CTkLabel(
+        welcome = ttk.Label(
             master=master,
             text=welcome_msg,
             font=("Calibri bold", 35)
@@ -89,73 +92,71 @@ class RegistrationApp(CTkFrame):
         welcome.place(relx=0.02, rely=0.05)
 
     def setup_email(self, master):
-        l_email = CTkLabel(
+        l_email = ttk.Label(
             master=master,
             text="Email",
             font=("Calibri", 15)
         )
         l_email.place(relx=0.02, rely=0.15)
-        self.email_entry = CTkEntry(
+        self.email_entry = ttk.Entry(
             master=master,
-            placeholder_text="example@example.com",
-            width=300,
+            width=60,
         )
         self.email_entry.place(relx=0.02, rely=0.2)
-        self.ans_email = CTkLabel(
+        self.email_entry.insert(0, "tomerbs1810@gmail.com")
+        self.ans_email = ttk.Label(
             master=master,
             text=""
         )
         self.ans_email.place(relx=0.02, rely=0.255)
 
     def setup_username(self, master):
-        l_username = CTkLabel(
+        l_username = ttk.Label(
             master=master,
             text="Username",
             font=("Calibri", 15)
         )
         l_username.place(relx=0.02, rely=0.3)
-        self.username_entry = CTkEntry(
+        self.username_entry = ttk.Entry(
             master=master,
-            placeholder_text="Min. 6 characters",
-            width=300
+            width=60
         )
         self.username_entry.place(relx=0.02, rely=0.35)
-        self.ans_username = CTkLabel(
+        self.ans_username = ttk.Label(
             master=master,
             text=""
         )
         self.ans_username.place(relx=0.02, rely=0.405)
 
     def setup_password(self, master, posx, posy):
-        l_password = CTkLabel(
+        l_password = ttk.Label(
             master=master,
             text="Password",
             font=("Calibri", 15)
         )
         l_password.place(relx=posx, rely=posy)
-        self.password_entry = CTkEntry(
+        self.password_entry = ttk.Entry(
             master=master,
-            placeholder_text="Min. 8 characters",
-            width=300
+            width=60
         )
         self.password_entry.place(relx=0.02, rely=posy + 0.05)
-        self.ans_password = CTkLabel(
+        self.password_entry.insert(0, "01102006t")
+        self.ans_password = ttk.Label(
             master=master,
             text=""
         )
         self.ans_password.place(relx=0.02, rely=posy + 0.107)
 
     def setup_confirmation_label(self, master, posy):
-        self.l_confirm = CTkLabel(
+        self.l_confirm = ttk.Label(
             master=master,
             text="",
             font=("Calibri bold", 20),
-            text_color="#009900"
         )
         self.l_confirm.place(relx=0.02, rely=posy)
 
     def setup_submit_button(self, master, submit_title, posx, posy, submit_command):
-        self.submit_btn = CTkButton(
+        self.submit_btn = ttk.Button(
             master=master,
             text=submit_title,
             command=submit_command
@@ -163,7 +164,7 @@ class RegistrationApp(CTkFrame):
         self.submit_btn.place(relx=posx, rely=posy)
 
     def setup_switch_button(self, master, switch_msg, posx, posy, switch_command):
-        self.switch_btn = CTkButton(
+        self.switch_btn = ttk.Button(
             master=master,
             text=switch_msg,
             command=switch_command
@@ -175,27 +176,27 @@ class RegistrationApp(CTkFrame):
 
         u_email = self.email_entry.get()
         if len(u_email) > 0 and re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', u_email):
-            self.ans_email.configure(text="Email is valid.", text_color="#009900")
+            self.ans_email.configure(text="Email is valid.")
             checksum += 1
         else:
-            self.ans_email.configure(text="Invalid email. Please enter a valid email.", text_color="#FF0000")
+            self.ans_email.configure(text="Invalid email. Please enter a valid email.")
             checksum -= 1 if checksum != 0 else 0
 
         u_username = self.username_entry.get()
         if len(u_username) >= 6:
-            self.ans_username.configure(text="Username is valid", text_color="#009900")
+            self.ans_username.configure(text="Username is valid")
             checksum += 1
         else:
             self.ans_username.configure(text="Invalid username. must be 6 characters or longer.",
-                                        text_color="#FF0000")
+                                        )
             checksum -= 1 if checksum != 0 else 0
 
         u_password = self.password_entry.get()
         if len(u_password) > 0 and len(u_password) >= 8:
-            self.ans_password.configure(text="Password is valid", text_color="#009900")
+            self.ans_password.configure(text="Password is valid")
             checksum += 1
         else:
-            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.", text_color="#FF0000")
+            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.")
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 3:
@@ -221,9 +222,9 @@ class RegistrationApp(CTkFrame):
                 print(f"answer: {self.server_reg_ans}")
 
                 if self.server_reg_ans == "<EXISTS>":
-                    self.ans_email.configure(text="Registration failed. Email is already in use.", text_color="#FF0000")
-                    self.ans_username.configure(text="Registration failed.", text_color="#FF0000")
-                    self.ans_password.configure(text="Registration failed.", text_color="#FF0000")
+                    self.ans_email.configure(text="Registration failed. Email is already in use.")
+                    self.ans_username.configure(text="Registration failed.")
+                    self.ans_password.configure(text="Registration failed.")
                 elif self.server_reg_ans == "<SUCCESS>":
                     self.l_confirm.configure(text="User Registered successfully")
                     self.switch_callback(MainPage)
@@ -233,18 +234,18 @@ class RegistrationApp(CTkFrame):
 
         u_email = self.email_entry.get()
         if len(u_email) > 0 and re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', u_email):
-            self.ans_email.configure(text="Email is valid.", text_color="#009900")
+            self.ans_email.configure(text="Email is valid.")
             checksum += 1
         else:
-            self.ans_email.configure(text="Invalid email. Please enter a valid email.", text_color="#FF0000")
+            self.ans_email.configure(text="Invalid email. Please enter a valid email.")
             checksum -= 1 if checksum != 0 else 0
 
         u_password = self.password_entry.get()
         if len(u_password) >= 8:
-            self.ans_password.configure(text="Password is valid", text_color="#009900")
+            self.ans_password.configure(text="Password is valid")
             checksum += 1
         else:
-            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.", text_color="#FF0000")
+            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.")
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 2:
@@ -268,18 +269,18 @@ class RegistrationApp(CTkFrame):
 
                 if self.server_login_ans == "<NO_EMAIL_EXISTS>":
                     self.ans_email.configure(text="Login failed. No accounts under the provided email.",
-                                             text_color="#FF0000")
+                                             )
                     self.ans_password.configure(text="Login failed. Password doesn't match the provided email.",
-                                                text_color="#FF0000")
+                                                )
                 elif self.server_login_ans == "<WRONG_PASSWORD>":
                     self.ans_password.configure(text="Login failed. Password doesn't match the provided email.",
-                                                text_color="#FF0000")
+                                                )
                 else:
                     self.l_confirm.configure(text=f"Welcome back {self.server_login_ans}")
                     self.switch_callback(MainPage)
 
 
-class FileFrame(CTkFrame):
+class FileFrame(ttk.Frame):
     def __init__(self, fname, fsize, fdate, master: Any, **kwargs):
         super().__init__(master, **kwargs)
         self.id_of_frame = random.randint(1, 100)
@@ -287,27 +288,27 @@ class FileFrame(CTkFrame):
         self.fsize = fsize
         self.fdate = fdate
 
-        lu_filename = CTkLabel(
+        lu_filename = ttk.Label(
             master=self,
             text=self.fname
         )
         lu_filename.pack(side='left', padx=30)
 
-        lu_size = CTkLabel(
+        lu_size = ttk.Label(
             master=self,
             text=self.fsize
         )
         lu_size.pack(side='right', padx=27)
 
-        lu_date_mod = CTkLabel(
+        lu_date_mod = ttk.Label(
             master=self,
             text=self.fdate
         )
         lu_date_mod.pack(side='right', padx=43)
 
         self.check_var = customtkinter.StringVar(value="off")
-        self.mark_for_action = customtkinter.CTkCheckBox(self, text="",
-                                                         variable=self.check_var, onvalue="on", offvalue="off")
+        self.mark_for_action = ttk.Checkbutton(self, text="",
+                                               variable=self.check_var, onvalue="on", offvalue="off")
         self.mark_for_action.pack(side='left')
 
     def get_checkvar(self) -> bool:
@@ -320,7 +321,7 @@ class FileFrame(CTkFrame):
         self.check_var.set("off")
 
 
-class MainPage(CTkFrame):
+class MainPage(ttk.Frame):
     def __init__(self, parent, client_socket: socket, switch_callback):
         super().__init__(parent)
         self.parent_app = parent
@@ -372,39 +373,40 @@ class MainPage(CTkFrame):
 
     def setup_action_frame(self):
         # Code for setting up the Action frame
-        f_actions = CTkFrame(master=self)
+        f_actions = ttk.Frame(master=self)
         f_actions.place(x=0, y=0, relheight=0.1, relwidth=1)
-        logout_button = CTkButton(self, text="Logout", command=self.on_logout).pack(expand=True, fill='both')
+        ttk.Button(self, text="Logout", command=self.on_logout).pack(expand=True, fill='both')
 
     def setup_data_center_frame(self):
         # Code for setting up the Data center frame
-        self.f_data_center = CTkFrame(master=self)
+        self.f_data_center = ttk.Frame(master=self)
         self.f_data_center.place(rely=0.1, x=0, relheight=0.9, relwidth=1)
 
     def setup_option_frame(self):
         # Code for setting up the Option frame
-        f_options = CTkFrame(master=self.f_data_center, fg_color="transparent")
+        f_options = ttk.Frame(master=self.f_data_center)
         f_options.place(x=0, y=0, relwidth=0.2, relheight=1)
-        l2 = CTkLabel(master=f_options, bg_color='blue', text="f_options").pack(expand=True, fill='both')
+        ttk.Label(master=f_options, text="f_options").pack(expand=True, fill='both')
 
     def setup_file_tags_frame(self):
         # Code for setting up the File tags frame
-        self.f_file_tags = CTkFrame(master=self.f_data_center)
-        self.f_file_tags.place(relx=0.2, rely=0, relwidth=0.8, relheight=0.06)
+        self.f_file_tags = ttk.Frame(master=self.f_data_center)
+        self.f_file_tags.place(relx=0.2, rely=0, relwidth=0.8, relheight=0.13)
+
+        add_file_btn = (ttk.Button(master=self.f_file_tags, text="add file", command=self.add_file)
+                        .pack(fill='x'))
+
+        process_checked_file_frames = (ttk.Button(master=self.f_file_tags, text="get results",
+                                                  command=self.receive_checked_files).pack(fill='x'))
 
     def setup_file_list_frame(self):
         # Code for setting up the File list frame
-        self.f_file_list = CTkScrollableFrame(master=self.f_data_center, orientation="vertical")
-        self.f_file_list.place(relx=0.2, rely=0.05, relwidth=0.8, relheight=0.95)
-        l_name = CTkLabel(master=self.f_file_tags, text="Name").pack(side='left', padx=30)
-        l_size = CTkLabel(master=self.f_file_tags, text="Size").pack(side='right', padx=50)
-        l_modate = CTkLabel(master=self.f_file_tags, text="Upload date").pack(side='right', padx=25)
+        self.f_file_list = ScrolledFrame(master=self.f_data_center, autohide=True, bootstyle='solar')
+        self.f_file_list.place(relx=0.2, rely=0.13, relwidth=0.8, relheight=0.87)
 
-        add_file_btn = (CTkButton(master=self.f_file_list, text="add file", command=self.add_file)
-                        .pack(expand=True, fill='x'))
-
-        process_checked_file_frames = (CTkButton(master=self.f_file_list, text="get results",
-                                                 command=self.receive_checked_files).pack(expand=True, fill='x'))
+        ttk.Label(master=self.f_file_tags, text="Name").pack(side='left', padx=30)
+        ttk.Label(master=self.f_file_tags, text="Size").pack(side='right', padx=50)
+        ttk.Label(master=self.f_file_tags, text="Upload date").pack(side='right', padx=25)
 
     @staticmethod
     def format_file_size(file_size_bytes):
@@ -488,42 +490,51 @@ class MainPage(CTkFrame):
         if self.save_path is None:
             self.get_save_path_dialog()
         else:
-            lst_of_fnames = self.checked_file_frames()
-            print(lst_of_fnames)
-            for file_name in lst_of_fnames:
-                try:
-                    self.client_socket.send("R".encode())
-                    self.client_socket.send(pickle.dumps(file_name))  # Send the serialized file name
+            self.client_socket.send(b'<R>')
+            select_file_names_lst = self.checked_file_frames()
 
-                    file_path = os.path.join(self.save_path, file_name)
+            # Convert the list to a pickled string
+            pickled_data = pickle.dumps(select_file_names_lst)
 
-                    with open(file_path, 'wb') as file:
-                        while True:
-                            data = self.client_socket.recv(1024)
-                            if not data:
-                                break
-                            file.write(data)
-                            if data.endswith(b"<END_OF_DATA>"):
-                                break
+            # Send the length of the pickled data
+            data_len = str(len(pickled_data))
+            self.client_socket.send(data_len.encode())
 
-                    print(f"File '{file_name}' received successfully.")
-                except Exception as e:
-                    print(f"Error while receiving file '{file_name}': {e}")
-                    # Handle the error appropriately, show a message to the user
+            # Send the pickled data
+            self.client_socket.send(pickled_data)
+
+            # Now the client receives the dictionary from the server
+            data_len = int(self.client_socket.recv(1024).decode())
+            pickled_fdn_dict = self.client_socket.recv(data_len)
+
+            # Load the dictionary
+            file_data_name_dict = pickle.loads(pickled_fdn_dict)
+
+            for indiv_filename, indiv_filebytes in file_data_name_dict.items():
+                file_path = os.path.join(self.save_path, indiv_filename)
+                with open(file_path, "wb") as file:
+                    file.write(indiv_filebytes)
+                    print(f"File '{indiv_filename}' received successfully.")
 
     def get_save_path_dialog(self):
-        dialog = customtkinter.CTkInputDialog(text="Write the path you want to save your files on:", title="Get save "
-                                                                                                           "path")
-        self.save_path = dialog.get_input()
+        dialog = customtkinter.CTkInputDialog(text="Write the path you want to save your files on:",
+                                              title="Get save path")
+        input_path = dialog.get_input()
+
+        if input_path:
+            # Normalize the path to handle potential issues with backslashes
+            self.save_path = os.path.normpath(input_path)
+        else:
+            # Use the default Downloads folder
+            self.save_path = os.path.join(os.path.expanduser("~"), "Downloads")
 
 
-class MyApp(CTk):
+class MyApp(ttk.Window):
     def __init__(self, client_socket):
         super().__init__()
         self.geometry("1000x800")
         self.title("Cloud-AV")
         self.client_socket = client_socket
-
         self.current_frame = None
         self.switch_frame(RegistrationApp)
 
@@ -535,6 +546,7 @@ class MyApp(CTk):
 
         new_frame.pack(fill="both", expand=True)
         self.current_frame = new_frame
+
 
 
 if __name__ == "__main__":

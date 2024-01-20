@@ -105,31 +105,26 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
                 user_files_manager.InsertFile(file_name, file_size, file_date, all_data)
                 print(f"File '{file_name}' received and saved in the database")
 
-            if action == "R":
-                try:
-                    file_name = client_socket.recv(1024).decode()
-                    file_data = user_files_manager.get_file_data(file_name)
+            if action == "<R>":
+                data_len = int(client_socket.recv(1024).decode())
 
-                    if file_data is None:
-                        raise FileNotFoundError(f"File '{file_name}' not found or empty")
+                pickled_data = client_socket.recv(data_len)
+                select_file_names_lst = pickle.loads(pickled_data)
 
-                    current_place = 0
-                    while current_place < len(file_data):
-                        data = file_data[current_place:current_place + 1024]
-                        client_socket.send(data)
-                        current_place += 1024
+                file_data_name_dict = {}
+                for individual_file in select_file_names_lst:
+                    file_data = user_files_manager.get_file_data(individual_file)
+                    file_data_name_dict[individual_file] = file_data
 
-                    # Ensure that the string "<END_OF_DATA>" is sent as bytes
-                    client_socket.send(b"<END_OF_DATA>")
-                    print(f"File '{file_name}' sent successfully")
+                # Convert the dictionary to a pickled string
+                pickled_fdn_dict = pickle.dumps(file_data_name_dict)
 
-                except FileNotFoundError:
-                    print(f"File '{file_name}' not found.")
-                    client_socket.send("FILE_NOT_FOUND".encode())
+                # Send the length of the pickled data
+                data_len = str(len(pickled_fdn_dict))
+                client_socket.send(data_len.encode())
 
-                except Exception as e:
-                    print(f"Error while sending file '{file_name}': {e}")
-                    client_socket.send("ERROR_SENDING_FILE".encode())
+                # Send the pickled dictionary
+                client_socket.send(pickled_fdn_dict)
 
     except (socket.error, IOError) as e:
         print(f"Error: {e}")
