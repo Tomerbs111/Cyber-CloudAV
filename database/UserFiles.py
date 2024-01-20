@@ -50,15 +50,12 @@ class UserFiles:
 
         return size[0] if size else None
 
-    def get_all_data(self, given_id: int):
-        get_size_query = f'''SELECT Name, Size, Date FROM {self.userid_db} WHERE id = ?;'''
-        all_details = self.cur.execute(get_size_query, (given_id,)).fetchone()
+    def get_all_data(self):
+        get_size_query = f'''SELECT Name, Size, Date FROM {self.userid_db};'''
+        all_details = self.cur.execute(get_size_query).fetchall()
 
         if all_details is not None:
-            file_name = all_details[0]
-            file_size = all_details[1]
-            file_date = all_details[2]
-            return {"file_name": file_name, "file_size": file_size, "file_date": file_date}
+            return all_details
         else:
             return "<DONE>"
 

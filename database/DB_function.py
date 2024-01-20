@@ -1,5 +1,5 @@
 import sqlite3
-
+from database.UserFiles import *
 conn = sqlite3.connect('User_info.db')
 cursor = conn.cursor()
 
@@ -88,4 +88,7 @@ def main():
 
 # Call this function to delete the UserFiles table
 if __name__ == "__main__":
-    main()
+    user_files_manager = UserFiles("u_1")
+    saved_file_prop_lst = user_files_manager.get_all_data()
+    for individual_file in saved_file_prop_lst:
+        print(individual_file)

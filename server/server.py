@@ -1,6 +1,8 @@
+import json
 import pickle
 import socket
 import os
+import sys
 import threading
 from typing import Any
 
@@ -13,6 +15,7 @@ PORT = 40303
 
 
 def handle_register_info(client_socket: socket, u_email: str, u_username: str, u_password: str) -> int | str:
+    auth = UserAuthentication()
     try:
         ans = auth.register(u_email, u_username, u_password)
         client_socket.send(ans.encode())
@@ -56,15 +59,24 @@ def handle_login_info(client_socket: socket, u_email: str, u_password: str) -> s
 
 def handle_requests(client_socket: socket, identifier: int) -> None:
     try:
-        # Send presaved files data to the client first
-        send_presaved_files_to_client(client_socket, identifier)
         while True:
+
             user_files_manager = UserFiles(f'u_{identifier}')
-            action = client_socket.recv(32).decode()
-            if action == "<OK>":
-                client_socket.sendall(b"<READY_FOR_PRESAVED_FILES>")
-                # Process presaved files and send them to the client
-                send_presaved_files_to_client(client_socket, identifier)
+            action = client_socket.recv(1024).decode()
+
+            if action == "<NARF>":
+                saved_file_prop_lst = user_files_manager.get_all_data()
+
+                # Convert the list to a pickled string
+                pickled_data = pickle.dumps(saved_file_prop_lst)
+
+                # Send the length of the pickled data
+                data_len = str(len(pickled_data))
+                client_socket.send(data_len.encode())
+
+                # Send the pickled data
+                client_socket.send(pickled_data)
+
 
             if action == "X":
                 print(f"User {identifier} has signed out.")
@@ -137,7 +149,7 @@ def send_presaved_files_to_client(client_socket, identifier):
         print(f"Error sending presaved files data to client: {e}")
 
 
-def handle_register_login(client_socket, identifier):
+def handle_register_login(client_socket: socket, identifier):
     try:
         while True:
             u_status = client_socket.recv(1024).decode()
@@ -166,16 +178,11 @@ def handle_register_login(client_socket, identifier):
     except (socket.error, IOError) as e:
         print(f"Error: {e}")
 
-    finally:
-        client_socket.close()
-
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((HOST, PORT))
 server_socket.listen(5)
 print(f"Server listening on {HOST}:{PORT}")
-
-auth = UserAuthentication()
 
 try:
     while True:

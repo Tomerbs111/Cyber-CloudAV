@@ -1,44 +1,107 @@
-import pickle
-import socket
-import os
-import threading
-from typing import Any
-
-from database.Authentication import UserAuthentication
-from database.UserFiles import UserFiles
-from datetime import datetime
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3
 
 
-def send_saved_files_details(identifier: str):
-    user_files_manager = UserFiles(f'u_{identifier}')
-    file_details_dict = {}
-    file_counter = 1
+class LoginPage(tk.Frame):
+    def __init__(self, parent, switch_callback):
+        super().__init__(parent)
+        self.parent = parent
+        self.switch_callback = switch_callback
 
-    try:
-        while True:
-            f_details = user_files_manager.get_all_data(file_counter)
-            if f_details == "<DONE>":
-                break
-            else:
-                file_name = f_details["file_name"]
-                file_size = f_details["file_size"]
-                file_date = f_details["file_date"]
+        # Add your login page widgets here
+        self.label = tk.Label(self, text="Login Page")
+        self.label.pack(pady=10)
 
-                file_details_dict[file_name] = [file_size, file_date]
-                file_counter += 1
+        self.login_button = tk.Button(self, text="Login", command=self.on_login)
+        self.login_button.pack(pady=10)
 
-        # Sending the file details over the socket
-        return file_details_dict
-    except Exception as e:
-        print(f"Error in send_saved_files_details: {e}")
+    def on_login(self):
+        # Check login credentials here
+        if self.is_valid_login():
+            messagebox.showinfo("Login Successful", "Welcome!")
+            self.switch_callback(MainPage)
 
-# ...
-
-if __name__ == "__main__":
-    print(send_saved_files_details("1"))
+    def is_valid_login(self):
+        # Implement your login validation logic here
+        # Return True if login is successful, else False
+        return True
 
 
-def recive_saved_file_details(serv_ans):
-    ans_dict = serv_ans
-    for key in ans_dict:
-        add_file_frame(key,format_file_size(ans_dict[0]), ans_dict[1])
+class MainPage(tk.Frame):
+    def __init__(self, parent, switch_callback):
+        super().__init__(parent)
+        self.parent = parent
+        self.switch_callback = switch_callback
+
+        # Add your main page widgets here
+        self.label = tk.Label(self, text="Main Page")
+        self.label.pack(pady=10)
+
+        self.logout_button = tk.Button(self, text="Logout", command=self.on_logout)
+        self.logout_button.pack(pady=10)
+
+    def on_logout(self):
+        print(self.parent)
+        self.switch_callback(LoginPage)
+
+    def print_test(self):
+        print("Test")
+
+
+class MyApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.geometry("400x300")
+        self.title("Login App")
+
+        self.current_frame = None
+        self.switch_frame(LoginPage)
+
+    def switch_frame(self, frame_class):
+        new_frame = frame_class(self, self.switch_frame)
+
+        if self.current_frame:
+            self.current_frame.pack_forget()
+
+        new_frame.pack(fill="both", expand=True)
+        self.current_frame = new_frame
+
+        # Check if the switched frame is MainPage and call the print_test function
+        if frame_class == MainPage:
+            new_frame.print_test()
+
+
+import tkinter as tk
+from tkinter import ttk
+from time import sleep
+
+teams = range(100)
+
+
+def button_command():
+    # start progress bar
+    popup = tk.Toplevel()
+    tk.Label(popup, text="Files being downloaded").grid(row=0, column=0)
+
+    progress = 0
+    progress_var = tk.DoubleVar()
+    progress_bar = ttk.Progressbar(popup, variable=progress_var, maximum=100)
+    progress_bar.grid(row=1, column=0)  # .pack(fill=tk.X, expand=1, side=tk.BOTTOM)
+    popup.pack_slaves()
+
+    progress_step = float(100.0 / len(teams))
+    for team in teams:
+        popup.update()
+        sleep(0.1)  # lauch task
+        progress += progress_step
+        progress_var.set(progress)
+
+    return 0
+
+
+root = tk.Tk()
+
+tk.Button(root, text="Launch", command=button_command).pack()
+
+root.mainloop()
