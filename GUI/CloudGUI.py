@@ -176,27 +176,27 @@ class RegistrationApp(ttk.Frame):
 
         u_email = self.email_entry.get()
         if len(u_email) > 0 and re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', u_email):
-            self.ans_email.configure(text="Email is valid.")
+            self.ans_email.configure(text="Email is valid.", foreground="green")
             checksum += 1
         else:
-            self.ans_email.configure(text="Invalid email. Please enter a valid email.")
+            self.ans_email.configure(text="Invalid email. Please enter a valid email.", foreground="red")
             checksum -= 1 if checksum != 0 else 0
 
         u_username = self.username_entry.get()
         if len(u_username) >= 6:
-            self.ans_username.configure(text="Username is valid")
+            self.ans_username.configure(text="Username is valid", foreground="green")
             checksum += 1
         else:
-            self.ans_username.configure(text="Invalid username. must be 6 characters or longer.",
+            self.ans_username.configure(text="Invalid username. must be 6 characters or longer.", foreground="red",
                                         )
             checksum -= 1 if checksum != 0 else 0
 
         u_password = self.password_entry.get()
         if len(u_password) > 0 and len(u_password) >= 8:
-            self.ans_password.configure(text="Password is valid")
+            self.ans_password.configure(text="Password is valid", foreground="green")
             checksum += 1
         else:
-            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.")
+            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.", foreground="red")
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 3:
@@ -222,11 +222,11 @@ class RegistrationApp(ttk.Frame):
                 print(f"answer: {self.server_reg_ans}")
 
                 if self.server_reg_ans == "<EXISTS>":
-                    self.ans_email.configure(text="Registration failed. Email is already in use.")
-                    self.ans_username.configure(text="Registration failed.")
-                    self.ans_password.configure(text="Registration failed.")
+                    self.ans_email.configure(text="Registration failed. Email is already in use.", foreground="red")
+                    self.ans_username.configure(text="Registration failed.", foreground="red")
+                    self.ans_password.configure(text="Registration failed.", foreground="red")
                 elif self.server_reg_ans == "<SUCCESS>":
-                    self.l_confirm.configure(text="User Registered successfully")
+                    self.l_confirm.configure(text="User Registered successfully", foreground="green")
                     self.switch_callback(MainPage)
 
     def l_when_submit(self):
@@ -234,18 +234,18 @@ class RegistrationApp(ttk.Frame):
 
         u_email = self.email_entry.get()
         if len(u_email) > 0 and re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', u_email):
-            self.ans_email.configure(text="Email is valid.")
+            self.ans_email.configure(text="Email is valid.", foreground="green")
             checksum += 1
         else:
-            self.ans_email.configure(text="Invalid email. Please enter a valid email.")
+            self.ans_email.configure(text="Invalid email. Please enter a valid email.", foreground="red")
             checksum -= 1 if checksum != 0 else 0
 
         u_password = self.password_entry.get()
         if len(u_password) >= 8:
-            self.ans_password.configure(text="Password is valid")
+            self.ans_password.configure(text="Password is valid", foreground="green")
             checksum += 1
         else:
-            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.")
+            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.", foreground="red")
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 2:
@@ -268,15 +268,15 @@ class RegistrationApp(ttk.Frame):
                 print(f"answer: {self.server_login_ans}")
 
                 if self.server_login_ans == "<NO_EMAIL_EXISTS>":
-                    self.ans_email.configure(text="Login failed. No accounts under the provided email.",
-                                             )
-                    self.ans_password.configure(text="Login failed. Password doesn't match the provided email.",
-                                                )
+                    self.ans_email.configure(text="Login failed. No accounts under the provided email."
+                                             , foreground="red")
+                    self.ans_password.configure(text="Login failed. Password doesn't match the provided email."
+                                                , foreground="red")
                 elif self.server_login_ans == "<WRONG_PASSWORD>":
-                    self.ans_password.configure(text="Login failed. Password doesn't match the provided email.",
-                                                )
+                    self.ans_password.configure(text="Login failed. Password doesn't match the provided email."
+                                                , foreground="red")
                 else:
-                    self.l_confirm.configure(text=f"Welcome back {self.server_login_ans}")
+                    self.l_confirm.configure(text=f"Welcome back {self.server_login_ans}", foreground="green")
                     self.switch_callback(MainPage)
 
 
@@ -532,11 +532,12 @@ class MainPage(ttk.Frame):
 class MyApp(ttk.Window):
     def __init__(self, client_socket):
         super().__init__()
-        self.geometry("1000x800")
+        self.geometry("1150x810")
         self.title("Cloud-AV")
         self.client_socket = client_socket
         self.current_frame = None
         self.switch_frame(RegistrationApp)
+
 
     def switch_frame(self, frame_class):
         new_frame = frame_class(self, self.client_socket, self.switch_frame)
@@ -544,11 +545,12 @@ class MyApp(ttk.Window):
         if self.current_frame:
             self.current_frame.pack_forget()
 
+
         new_frame.pack(fill="both", expand=True)
         self.current_frame = new_frame
 
 
-
 if __name__ == "__main__":
-    my_app = MyApp("1")
+    my_app = MyApp(client_socket=None)
     my_app.mainloop()
+
