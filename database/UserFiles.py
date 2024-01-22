@@ -50,5 +50,14 @@ class UserFiles:
 
         return size[0] if size else None
 
+    def get_all_data(self):
+        get_size_query = f'''SELECT Name, Size, Date FROM {self.userid_db};'''
+        all_details = self.cur.execute(get_size_query).fetchall()
+
+        if all_details is not None:
+            return all_details
+        else:
+            return "<DONE>"
+
     def close_connection(self):
         self.conn.close()

@@ -3,15 +3,16 @@ import pickle
 import random
 import re
 import time
+from typing import Any
+from tkinter import filedialog as fd
 from datetime import datetime
 import socket
+import customtkinter
+from customtkinter import *
 import tkinter as tk
-from typing import Any
-
 import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledFrame
-from tkinter import filedialog as fd
-from customtkinter import CTkInputDialog, StringVar
 
 
 class RegistrationApp(ttk.Frame):
@@ -19,6 +20,11 @@ class RegistrationApp(ttk.Frame):
         super().__init__(parent)
         self.parent_app = parent
         self.switch_callback = switch_callback
+
+        self.login_frame = ttk.Frame(master=self)
+        self.login_frame.pack(side="top", fill="both", expand=True)
+
+        self.register_frame = ttk.Frame(master=self)
 
         # Instance variables for all answers
         self.ans_password = None
@@ -41,125 +47,125 @@ class RegistrationApp(ttk.Frame):
         self.attempt_type = "<LOGIN>"
 
         # Initialize UI components
-        self.setup_welcome("Welcome back to CloudAV")
-        self.setup_email()
-        self.setup_password(0.02, 0.3)
-        self.setup_submit_button("Sign in", 0.02, 0.5, self.l_when_submit)
-        self.setup_confirmation_label(0.6)
-        self.setup_switch_button("want to register?", 0.25, 0.5, self.switch_to_registration)
+        self.setup_welcome(self.login_frame, "Welcome back to CloudAV")
+        self.setup_email(self.login_frame)
+        self.setup_password(self.login_frame, 0.02, 0.3)
+        self.setup_submit_button(self.login_frame, "Sign in", 0.02, 0.5, self.l_when_submit)
+        self.setup_confirmation_label(self.login_frame, 0.6)
+        self.setup_switch_button(self.login_frame, "want to register?", 0.25, 0.5, self.switch_to_registration)
 
     def switch_to_registration(self):
-        self.destroy_current_frame()
+        self.register_frame = ttk.Frame(master=self)
+        self.setup_welcome(self.register_frame, "Welcome to CloudAV")
+        self.setup_email(self.register_frame)
+        self.setup_username(self.register_frame)
+        self.setup_password(self.register_frame, 0.02, 0.45)
+        self.setup_submit_button(self.register_frame, "Sign up", 0.02, 0.65, self.r_when_submit)
+        self.setup_confirmation_label(self.register_frame, 0.75)
+        self.setup_switch_button(self.register_frame, "want to login?", 0.25, 0.65, self.switch_to_login)
 
-        # Create and set up registration frame
+        self.login_frame.destroy()
+        self.register_frame.pack(side="top", fill="both", expand=True)
         self.attempt_type = "<REGISTER>"
-        self.setup_registration_frame()
 
     def switch_to_login(self):
-        self.destroy_current_frame()
-
-        # Create and set up login frame
-        self.attempt_type = "<LOGIN>"
-        self.setup_login_frame()
-
-    def destroy_current_frame(self):
-        if self.attempt_type == "<REGISTER>":
-            self.register_frame.destroy()
-        elif self.attempt_type == "<LOGIN>":
-            self.login_frame.destroy()
-
-    def setup_login_frame(self):
         self.login_frame = ttk.Frame(master=self)
-        self.setup_welcome("Welcome back to CloudAV")
-        self.setup_email()
-        self.setup_password(0.02, 0.3)
-        self.setup_submit_button("Sign in", 0.02, 0.5, self.l_when_submit)
-        self.setup_confirmation_label(0.6)
-        self.setup_switch_button("want to register?", 0.25, 0.5, self.switch_to_registration)
-        self.login_frame.pack(side="top", fill="both", expand=True)
+        self.setup_welcome(self.login_frame, "Welcome back to CloudAV")
+        self.setup_email(self.login_frame)
+        self.setup_password(self.login_frame, 0.02, 0.3)
+        self.setup_submit_button(self.login_frame, "Sign in", 0.02, 0.5, self.l_when_submit)
+        self.setup_confirmation_label(self.login_frame, 0.6)
+        self.setup_switch_button(self.login_frame, "want to register?", 0.25, 0.5, self.switch_to_registration)
 
-    def setup_registration_frame(self):
-        self.register_frame = ttk.Frame(master=self)
-        self.setup_welcome("Welcome to CloudAV")
-        self.setup_email()
-        self.setup_username()
-        self.setup_password(0.02, 0.45)
-        self.setup_submit_button("Sign up", 0.02, 0.65, self.r_when_submit)
-        self.setup_confirmation_label(0.75)
-        self.setup_switch_button("want to login?", 0.25, 0.65, self.switch_to_login)
-        self.register_frame.pack(side="top", fill="both", expand=True)
+        self.register_frame.destroy()
+        self.login_frame.pack(side="top", fill="both", expand=True)
+        self.attempt_type = "<LOGIN>"
 
     @staticmethod
-    def setup_welcome(welcome_msg):
+    def setup_welcome(master, welcome_msg):
+        set_appearance_mode("system")
         welcome = ttk.Label(
+            master=master,
             text=welcome_msg,
             font=("Calibri bold", 35)
         )
         welcome.place(relx=0.02, rely=0.05)
 
-    def setup_email(self):
+    def setup_email(self, master):
         l_email = ttk.Label(
+            master=master,
             text="Email",
             font=("Calibri", 15)
         )
         l_email.place(relx=0.02, rely=0.15)
         self.email_entry = ttk.Entry(
-            width=300,
+            master=master,
+            width=60,
         )
         self.email_entry.place(relx=0.02, rely=0.2)
         self.email_entry.insert(0, "tomerbs1810@gmail.com")
         self.ans_email = ttk.Label(
+            master=master,
             text=""
         )
         self.ans_email.place(relx=0.02, rely=0.255)
 
-    def setup_username(self):
+    def setup_username(self, master):
         l_username = ttk.Label(
+            master=master,
             text="Username",
             font=("Calibri", 15)
         )
         l_username.place(relx=0.02, rely=0.3)
         self.username_entry = ttk.Entry(
-            width=300
+            master=master,
+            width=60
         )
         self.username_entry.place(relx=0.02, rely=0.35)
         self.ans_username = ttk.Label(
+            master=master,
             text=""
         )
         self.ans_username.place(relx=0.02, rely=0.405)
 
-    def setup_password(self, posx, posy):
+    def setup_password(self, master, posx, posy):
         l_password = ttk.Label(
+            master=master,
             text="Password",
             font=("Calibri", 15)
         )
         l_password.place(relx=posx, rely=posy)
         self.password_entry = ttk.Entry(
-            width=300
+            master=master,
+            width=60
         )
         self.password_entry.place(relx=0.02, rely=posy + 0.05)
         self.password_entry.insert(0, "01102006t")
         self.ans_password = ttk.Label(
+            master=master,
             text=""
         )
         self.ans_password.place(relx=0.02, rely=posy + 0.107)
 
-    def setup_confirmation_label(self, posy):
+    def setup_confirmation_label(self, master, posy):
         self.l_confirm = ttk.Label(
+            master=master,
             text="",
             font=("Calibri bold", 20),
         )
         self.l_confirm.place(relx=0.02, rely=posy)
 
-    def setup_submit_button(self, submit_title, posx, posy, submit_command):
+    def setup_submit_button(self, master, submit_title, posx, posy, submit_command):
         self.submit_btn = ttk.Button(
+            master=master,
             text=submit_title,
             command=submit_command
         )
         self.submit_btn.place(relx=posx, rely=posy)
 
-    def setup_switch_button(self, switch_msg, posx, posy, switch_command):
+    def setup_switch_button(self, master, switch_msg, posx, posy, switch_command):
         self.switch_btn = ttk.Button(
+            master=master,
             text=switch_msg,
             command=switch_command
         )
@@ -170,27 +176,27 @@ class RegistrationApp(ttk.Frame):
 
         u_email = self.email_entry.get()
         if len(u_email) > 0 and re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', u_email):
-            self.ans_email.configure(text="Email is valid.")
+            self.ans_email.configure(text="Email is valid.", foreground="green")
             checksum += 1
         else:
-            self.ans_email.configure(text="Invalid email. Please enter a valid email.")
+            self.ans_email.configure(text="Invalid email. Please enter a valid email.", foreground="red")
             checksum -= 1 if checksum != 0 else 0
 
         u_username = self.username_entry.get()
         if len(u_username) >= 6:
-            self.ans_username.configure(text="Username is valid")
+            self.ans_username.configure(text="Username is valid", foreground="green")
             checksum += 1
         else:
-            self.ans_username.configure(text="Invalid username. must be 6 characters or longer.",
+            self.ans_username.configure(text="Invalid username. must be 6 characters or longer.", foreground="red",
                                         )
             checksum -= 1 if checksum != 0 else 0
 
         u_password = self.password_entry.get()
         if len(u_password) > 0 and len(u_password) >= 8:
-            self.ans_password.configure(text="Password is valid")
+            self.ans_password.configure(text="Password is valid", foreground="green")
             checksum += 1
         else:
-            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.")
+            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.", foreground="red")
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 3:
@@ -216,11 +222,11 @@ class RegistrationApp(ttk.Frame):
                 print(f"answer: {self.server_reg_ans}")
 
                 if self.server_reg_ans == "<EXISTS>":
-                    self.ans_email.configure(text="Registration failed. Email is already in use.")
-                    self.ans_username.configure(text="Registration failed.")
-                    self.ans_password.configure(text="Registration failed.")
+                    self.ans_email.configure(text="Registration failed. Email is already in use.", foreground="red")
+                    self.ans_username.configure(text="Registration failed.", foreground="red")
+                    self.ans_password.configure(text="Registration failed.", foreground="red")
                 elif self.server_reg_ans == "<SUCCESS>":
-                    self.l_confirm.configure(text="User Registered successfully")
+                    self.l_confirm.configure(text="User Registered successfully", foreground="green")
                     self.switch_callback(MainPage)
 
     def l_when_submit(self):
@@ -228,18 +234,18 @@ class RegistrationApp(ttk.Frame):
 
         u_email = self.email_entry.get()
         if len(u_email) > 0 and re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', u_email):
-            self.ans_email.configure(text="Email is valid.")
+            self.ans_email.configure(text="Email is valid.", foreground="green")
             checksum += 1
         else:
-            self.ans_email.configure(text="Invalid email. Please enter a valid email.")
+            self.ans_email.configure(text="Invalid email. Please enter a valid email.", foreground="red")
             checksum -= 1 if checksum != 0 else 0
 
         u_password = self.password_entry.get()
         if len(u_password) >= 8:
-            self.ans_password.configure(text="Password is valid")
+            self.ans_password.configure(text="Password is valid", foreground="green")
             checksum += 1
         else:
-            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.")
+            self.ans_password.configure(text="Invalid password. must be 8 characters or longer.", foreground="red")
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 2:
@@ -262,15 +268,15 @@ class RegistrationApp(ttk.Frame):
                 print(f"answer: {self.server_login_ans}")
 
                 if self.server_login_ans == "<NO_EMAIL_EXISTS>":
-                    self.ans_email.configure(text="Login failed. No accounts under the provided email.",
-                                             )
-                    self.ans_password.configure(text="Login failed. Password doesn't match the provided email.",
-                                                )
+                    self.ans_email.configure(text="Login failed. No accounts under the provided email."
+                                             , foreground="red")
+                    self.ans_password.configure(text="Login failed. Password doesn't match the provided email."
+                                                , foreground="red")
                 elif self.server_login_ans == "<WRONG_PASSWORD>":
-                    self.ans_password.configure(text="Login failed. Password doesn't match the provided email.",
-                                                )
+                    self.ans_password.configure(text="Login failed. Password doesn't match the provided email."
+                                                , foreground="red")
                 else:
-                    self.l_confirm.configure(text=f"Welcome back {self.server_login_ans}")
+                    self.l_confirm.configure(text=f"Welcome back {self.server_login_ans}", foreground="green")
                     self.switch_callback(MainPage)
 
 
@@ -283,21 +289,24 @@ class FileFrame(ttk.Frame):
         self.fdate = fdate
 
         lu_filename = ttk.Label(
+            master=self,
             text=self.fname
         )
         lu_filename.pack(side='left', padx=30)
 
         lu_size = ttk.Label(
+            master=self,
             text=self.fsize
         )
         lu_size.pack(side='right', padx=27)
 
         lu_date_mod = ttk.Label(
+            master=self,
             text=self.fdate
         )
         lu_date_mod.pack(side='right', padx=43)
 
-        self.check_var = StringVar(value="off")
+        self.check_var = customtkinter.StringVar(value="off")
         self.mark_for_action = ttk.Checkbutton(self, text="",
                                                variable=self.check_var, onvalue="on", offvalue="off")
         self.mark_for_action.pack(side='left')
@@ -336,7 +345,6 @@ class MainPage(ttk.Frame):
         # Activate the function after MainPage has finished loading
         time.sleep(3)
         self.notify_and_receive_files()
-
 
     def notify_and_receive_files(self):
         self.client_socket.send(b'<NARF>')
@@ -509,7 +517,7 @@ class MainPage(ttk.Frame):
                     print(f"File '{indiv_filename}' received successfully.")
 
     def get_save_path_dialog(self):
-        dialog = CTkInputDialog(text="Write the path you want to save your files on:",
+        dialog = customtkinter.CTkInputDialog(text="Write the path you want to save your files on:",
                                               title="Get save path")
         input_path = dialog.get_input()
 
@@ -524,12 +532,12 @@ class MainPage(ttk.Frame):
 class MyApp(ttk.Window):
     def __init__(self, client_socket):
         super().__init__()
-        self.geometry("1000x800")
+        self.geometry("1150x810")
         self.title("Cloud-AV")
         self.client_socket = client_socket
-
         self.current_frame = None
         self.switch_frame(RegistrationApp)
+
 
     def switch_frame(self, frame_class):
         new_frame = frame_class(self, self.client_socket, self.switch_frame)
@@ -537,10 +545,12 @@ class MyApp(ttk.Window):
         if self.current_frame:
             self.current_frame.pack_forget()
 
+
         new_frame.pack(fill="both", expand=True)
         self.current_frame = new_frame
 
 
 if __name__ == "__main__":
-    my_app = MyApp("1")
+    my_app = MyApp(client_socket=None)
     my_app.mainloop()
+

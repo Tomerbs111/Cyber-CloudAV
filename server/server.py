@@ -1,5 +1,8 @@
+import json
+import pickle
 import socket
 import os
+import sys
 import threading
 from typing import Any
 
@@ -12,6 +15,7 @@ PORT = 40303
 
 
 def handle_register_info(client_socket: socket, u_email: str, u_username: str, u_password: str) -> int | str:
+    auth = UserAuthentication()
     try:
         ans = auth.register(u_email, u_username, u_password)
         client_socket.send(ans.encode())
@@ -40,7 +44,7 @@ def handle_login_info(client_socket: socket, u_email: str, u_password: str) -> s
             print("Login failed. No accounts under the provided email.")
             return
         elif auth_ans == "<WRONG_PASSWORD>":
-            print("Login failed. Password doesn't match to the provided email.")
+            print("Login failed. Password doesn't match the provided email.")
             return
         else:
             print("User logged in Successfully")
@@ -56,18 +60,38 @@ def handle_login_info(client_socket: socket, u_email: str, u_password: str) -> s
 def handle_requests(client_socket: socket, identifier: int) -> None:
     try:
         while True:
+
             user_files_manager = UserFiles(f'u_{identifier}')
             action = client_socket.recv(1024).decode()
 
-            if action == "SIGN OUT":
+            if action == "<NARF>":
+                saved_file_prop_lst = user_files_manager.get_all_data()
+
+                # Convert the list to a pickled string
+                pickled_data = pickle.dumps(saved_file_prop_lst)
+
+                # Send the length of the pickled data
+                data_len = str(len(pickled_data))
+                client_socket.send(data_len.encode())
+
+                # Send the pickled data
+                client_socket.send(pickled_data)
+
+
+            if action == "X":
                 print(f"User {identifier} has signed out.")
                 break
 
             if action == "S":
-                file_name = client_socket.recv(1024).decode()
-                file_date = datetime.now()
-                file_size = client_socket.recv(1024).decode()
+                # server is getting the file properties to write in db
+                file_prop_lst = pickle.loads(client_socket.recv(1024))
 
+                file_name = file_prop_lst[0]
+                file_size = file_prop_lst[1]
+                file_date = file_prop_lst[2]
+                client_socket.send(b"<GOT_PROP>")
+
+                # server got all the properties
                 done_sending = False
                 all_data = b""
                 while not done_sending:
@@ -81,28 +105,26 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
                 user_files_manager.InsertFile(file_name, file_size, file_date, all_data)
                 print(f"File '{file_name}' received and saved in the database")
 
-            if action == "R":
-                try:
-                    file_name = client_socket.recv(1024).decode()
-                    file_data = user_files_manager.get_file_data(file_name)
+            if action == "<R>":
+                data_len = int(client_socket.recv(1024).decode())
 
-                    if file_data is None:
-                        raise ValueError(f"File '{file_name}' not found or empty")
+                pickled_data = client_socket.recv(data_len)
+                select_file_names_lst = pickle.loads(pickled_data)
 
-                    current_place = 0
-                    while current_place < len(file_data):
-                        data = file_data[current_place:current_place + 1024]
-                        client_socket.send(data)
-                        current_place += 1024
-                    client_socket.send(b"<END_OF_DATA>")
-                    print(f"File '{file_name}' sent successfully")
+                file_data_name_dict = {}
+                for individual_file in select_file_names_lst:
+                    file_data = user_files_manager.get_file_data(individual_file)
+                    file_data_name_dict[individual_file] = file_data
 
-                except FileNotFoundError:
-                    print(f"File '{file_name}' not found.")
-                    client_socket.send("FILE_NOT_FOUND".encode())
+                # Convert the dictionary to a pickled string
+                pickled_fdn_dict = pickle.dumps(file_data_name_dict)
 
-                except ValueError:
-                    print("Couldn't find the data based on the given file name")
+                # Send the length of the pickled data
+                data_len = str(len(pickled_fdn_dict))
+                client_socket.send(data_len.encode())
+
+                # Send the pickled dictionary
+                client_socket.send(pickled_fdn_dict)
 
     except (socket.error, IOError) as e:
         print(f"Error: {e}")
@@ -111,12 +133,51 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
         client_socket.close()
 
 
+def send_presaved_files_to_client(client_socket, identifier):
+    try:
+        user_files_manager = UserFiles(f'u_{identifier}')
+        presaved_files_dict = user_files_manager.get_all_data(identifier)
+
+        # Send the presaved files dictionary to the client
+        client_socket.sendall(pickle.dumps(presaved_files_dict))
+    except Exception as e:
+        print(f"Error sending presaved files data to client: {e}")
+
+
+def handle_register_login(client_socket: socket, identifier):
+    try:
+        while True:
+            u_status = client_socket.recv(1024).decode()
+            if u_status == "<REGISTER>":
+                field_dict = pickle.loads(client_socket.recv(1024))
+                u_email = field_dict['email']
+                u_username = field_dict['username']
+                u_password = field_dict['password']
+
+                identifier = handle_register_info(client_socket, u_email, u_username, u_password)
+
+            elif u_status == "<LOGIN>":
+                field_dict = pickle.loads(client_socket.recv(1024))
+                u_email = field_dict['email']
+                u_password = field_dict['password']
+
+                identifier = handle_login_info(client_socket, u_email, u_password)
+
+            if identifier and identifier != "<EXISTS>":
+                # Start a new thread to handle the client
+                client_handler = threading.Thread(target=handle_requests, args=(client_socket, identifier))
+
+                client_handler.start()
+                break  # Break out of the inner loop if registration or login is successful
+
+    except (socket.error, IOError) as e:
+        print(f"Error: {e}")
+
+
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((HOST, PORT))
 server_socket.listen(5)
 print(f"Server listening on {HOST}:{PORT}")
-
-auth = UserAuthentication()
 
 try:
     while True:
@@ -125,26 +186,10 @@ try:
 
         identifier = None  # Initialize identifier outside the loop
 
-        while True:
-            u_status = client_socket.recv(1024).decode()
-            if u_status == "<REGISTER>":
-                u_email = client_socket.recv(1024).decode()
-                u_username = client_socket.recv(1024).decode()
-                u_password = client_socket.recv(1024).decode()
-
-                identifier = handle_register_info(client_socket, u_email, u_username, u_password)
-
-            elif u_status == "<LOGIN>":
-                u_email = client_socket.recv(100).decode()
-                u_password = client_socket.recv(100).decode()
-
-                identifier = handle_login_info(client_socket, u_email, u_password)
-
-            if identifier and identifier != "<EXISTS>":
-                # Start a new thread to handle the client
-                client_handler = threading.Thread(target=handle_requests, args=(client_socket, identifier))
-                client_handler.start()
-                break  # Break out of the inner loop if registration is successful
+        # Start a new thread to handle registration or login
+        client_register_login_handler = threading.Thread(target=handle_register_login,
+                                                         args=(client_socket, identifier))
+        client_register_login_handler.start()
 
 except KeyboardInterrupt:
     print("Server terminated by user.")
