@@ -229,7 +229,7 @@ class RegistrationApp(ttk.Frame):
                     self.l_confirm.configure(text="User Registered successfully", foreground="green")
                     self.switch_callback(MainPage)
 
-    def l_when_submit(self):
+        def l_when_submit(self):
         checksum = 0
 
         u_email = self.email_entry.get()
@@ -538,13 +538,11 @@ class MyApp(ttk.Window):
         self.current_frame = None
         self.switch_frame(RegistrationApp)
 
-
     def switch_frame(self, frame_class):
         new_frame = frame_class(self, self.client_socket, self.switch_frame)
 
         if self.current_frame:
             self.current_frame.pack_forget()
-
 
         new_frame.pack(fill="both", expand=True)
         self.current_frame = new_frame
@@ -553,4 +551,3 @@ class MyApp(ttk.Window):
 if __name__ == "__main__":
     my_app = MyApp(client_socket=None)
     my_app.mainloop()
-

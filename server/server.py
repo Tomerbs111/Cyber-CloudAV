@@ -10,7 +10,7 @@ from database.Authentication import UserAuthentication
 from database.UserFiles import UserFiles
 from datetime import datetime
 
-HOST = '127.0.0.1'
+HOST = '0.0.0.0'
 PORT = 40303
 
 
@@ -58,6 +58,12 @@ def handle_login_info(client_socket: socket, u_email: str, u_password: str) -> s
 
 
 def handle_requests(client_socket: socket, identifier: int) -> None:
+    """
+
+    :param client_socket:
+    :param identifier:
+    :return:
+    """
     try:
         while True:
 
@@ -76,7 +82,6 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
 
                 # Send the pickled data
                 client_socket.send(pickled_data)
-
 
             if action == "X":
                 print(f"User {identifier} has signed out.")
