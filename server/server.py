@@ -11,7 +11,7 @@ from database.UserFiles import UserFiles
 from datetime import datetime
 
 HOST = '0.0.0.0'
-PORT = 40303
+PORT = 40302
 
 
 def handle_register_info(client_socket: socket, u_email: str, u_username: str, u_password: str) -> int | str:
@@ -130,6 +130,7 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
 
                 # Send the pickled dictionary
                 client_socket.send(pickled_fdn_dict)
+
 
     except (socket.error, IOError) as e:
         print(f"Error: {e}")

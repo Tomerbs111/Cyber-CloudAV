@@ -1,16 +1,19 @@
 import socket
 import os
-from GUI.CloudGUI import *
+from GUI.Gui_CAV import *
+from ClientCommunication import ClientCommunication
 
 HOST = '127.0.0.1'
-PORT = 40303
+PORT = 40302
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
 
+client_communicator = ClientCommunication(client_socket)
+
 try:
     while True:
-        app = MyApp(client_socket)
+        app = MyApp(client_communicator)
         app.mainloop()
         client_socket.sendall("X".encode())
         client_socket.close()

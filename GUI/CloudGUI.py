@@ -229,7 +229,7 @@ class RegistrationApp(ttk.Frame):
                     self.l_confirm.configure(text="User Registered successfully", foreground="green")
                     self.switch_callback(MainPage)
 
-        def l_when_submit(self):
+    def l_when_submit(self):
         checksum = 0
 
         u_email = self.email_entry.get()
