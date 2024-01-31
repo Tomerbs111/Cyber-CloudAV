@@ -21,7 +21,7 @@ import re
 
 import ttkbootstrap as ttk
 from customtkinter import *
-from PIL import Image
+from PIL import Image, ImageTk
 
 
 class RegistrationApp(ttk.Frame):
@@ -487,6 +487,44 @@ class MainPage(ttk.Frame):
 
     def add_file_frame(self, file_name, file_size, file_date):
         file_frame = FileFrame(self.f_file_list, file_name, file_size, file_date)
+
+        # Check if the file is an image (you can customize the list of image extensions)
+        image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+        is_image = any(file_name.lower().endswith(ext) for ext in image_extensions)
+
+        # Check if the file is a document type (you can customize the list of document extensions)
+        document_extensions = ['.pdf', '.doc', '.docx', '.ppt', '.pptx']
+        is_document = any(file_name.lower().endswith(ext) for ext in document_extensions)
+
+        # Check if the file is a video type (you can customize the list of video extensions)
+        video_extensions = ['.mp4', '.avi', '.mkv', '.mov']
+        is_video = any(file_name.lower().endswith(ext) for ext in video_extensions)
+
+        if is_image:
+            # Path to the image icon for images (replace with your path)
+            icon_path = "../GUI/file_icons/image_icon.png"
+        elif is_document:
+            # Path to the icon for document types (replace with your path)
+            icon_path = "../GUI/file_icons/documents_icon.png"
+        elif is_video:
+            # Path to the icon for video types (replace with your path)
+            icon_path = "../GUI/file_icons/video_icon.png"
+        else:
+            icon_path = None
+
+        if icon_path:
+            # Load the icon image
+            icon_image = Image.open(icon_path)
+            icon_image = icon_image.resize((20, 20))  # Adjust the size as needed
+
+            # Convert the image to a format compatible with tkinter
+            tk_icon_image = ImageTk.PhotoImage(icon_image)
+
+            # Create a label to display the icon
+            icon_label = ttk.Label(master=file_frame, image=tk_icon_image)
+            icon_label.image = tk_icon_image
+            icon_label.pack(side='left', padx=10)  # Adjust the padding as needed
+
         file_frame.pack(expand=True, fill='x', side='top')
         self.file_frames.append(file_frame)  # Add FileFrame instance to the list
         self.file_frame_counter += 1

@@ -30,11 +30,16 @@ class FileFrame(ttk.Frame):
         self.fsize = fsize
         self.fdate = fdate
 
+        self.check_var = StringVar(value="off")
+        self.mark_for_action = ttk.Checkbutton(self, text="",
+                                               variable=self.check_var, onvalue="on", offvalue="off")
+        self.mark_for_action.pack(side='left', padx=5)
+
         lu_filename = ttk.Label(
             master=self,
             text=self.fname
         )
-        lu_filename.pack(side='left', padx=30)
+        lu_filename.pack(side='left', padx=5)
 
         lu_size = ttk.Label(
             master=self,
@@ -47,11 +52,6 @@ class FileFrame(ttk.Frame):
             text=self.fdate
         )
         lu_date_mod.pack(side='right', padx=43)
-
-        self.check_var = StringVar(value="off")
-        self.mark_for_action = ttk.Checkbutton(self, text="",
-                                               variable=self.check_var, onvalue="on", offvalue="off")
-        self.mark_for_action.pack(side='left')
 
     def get_checkvar(self) -> bool:
         return self.check_var.get() == "on"
@@ -101,7 +101,7 @@ class MainPage(ttk.Frame):
         # Code for setting up the Action frame
         f_searchbar = ttk.Frame(master=self)
         f_searchbar.place(x=0, y=0, relheight=0.1, relwidth=1)
-        ttk.Label(f_searchbar, text="Searchbar Placeholder", background="green").pack(fill="both", expand=True)
+        ttk.Label(f_searchbar, text="Searchbar Placeholder").pack(fill="both", expand=True)
 
     def setup_data_center_frame(self):
         # Code for setting up the Data center frame
@@ -119,7 +119,9 @@ class MainPage(ttk.Frame):
         self.f_action = ttk.Frame(master=self.f_data_center)
         self.f_action.place(relx=0.2, rely=0, relwidth=0.8, relheight=0.05)
 
-        ttk.Label(self.f_action, text="Action Placeholder", bootstyle="inverse-dark").pack(fill="both", expand=True)
+        ttk.Button(master=self.f_action, text="add file", command=self.add_file).pack(fill='x')
+
+    # ...
 
     def setup_file_management_frame(self):
         f_file_management = ttk.Frame(master=self.f_data_center)
@@ -128,33 +130,19 @@ class MainPage(ttk.Frame):
         f_file_properties = ttk.Frame(master=f_file_management)
         f_file_properties.place(relx=0, rely=0, relwidth=1, relheight=0.05)
 
-        ttk.Button(master=f_file_properties, text="Name").pack(side='left', padx=30)
-        ttk.Button(master=f_file_properties, text="Size").pack(side='right', padx=50)
-        ttk.Button(master=f_file_properties, text="Upload date").pack(side='right', padx=25)
+        CTkButton(master=f_file_properties, text="Name").pack(side='left', padx=5)  # Adjusted padding
+        CTkButton(master=f_file_properties, text="Size").pack(side='right', padx=27)  # Adjusted padding
+        CTkButton(master=f_file_properties, text="Upload date").pack(side='right', padx=47)  # Adjusted padding
 
         self.f_file_list = ScrolledFrame(master=f_file_management, autohide=False)
         self.f_file_list.place(relx=0, rely=0.05, relwidth=1, relheight=0.95)
-
-        ttk.Label(self.f_file_list, text="File list Placeholder").pack(fill="both",
-                                                                       expand=True)
-        ttk.Label(self.f_file_list, text="File list Placeholder").pack(fill="both",
-                                                                       expand=True)
 
     def setup_file_properties_frame(self):
         f_file_properties = CTkFrame(master=self.f_data_center, corner_radius=10)
         f_file_properties.place(relx=0.2, rely=0.05, relwidth=0.79, relheight=0.05)
 
-        ttk.Button(master=f_file_properties, text="Name").pack(side='left', padx=30)
-        ttk.Button(master=f_file_properties, text="Size").pack(side='right', padx=50)
-        ttk.Button(master=f_file_properties, text="Upload date").pack(side='right', padx=25)
-
         self.f_file_list = CTkScrollableFrame(master=self.f_data_center, corner_radius=10)
         self.f_file_list.place(relx=0.2, rely=0.1, relwidth=0.79, relheight=0.88)
-
-        ttk.Label(self.f_file_list, text="File list Placeholder", padding=10).pack(fill="both",
-                                                                                  expand=True)
-        ttk.Label(self.f_file_list, text="File list Placeholder").pack(fill="both",
-                                                                       expand=True)
 
     # client communication parts in GUI
     def add_file(self):
@@ -179,8 +167,7 @@ class MainPage(ttk.Frame):
 
             send_file_thread = threading.Thread(
                 target=self.client_communicator.send_file(file_name, short_filename, formatted_file_size,
-                                                          short_file_date,
-                                                          file_bytes))
+                                                          short_file_date,file_bytes))
             send_file_thread.start()
 
             self.add_file_frame(short_filename, formatted_file_size, short_file_date)
@@ -238,8 +225,8 @@ class MainPage(ttk.Frame):
         return checked_file_frames_list
 
     def get_save_path_dialog(self):
-        dialog = customtkinter.CTkInputDialog(text="Write the path you want to save your files on:",
-                                              title="Get save path")
+        dialog = CTkInputDialog(text="Write the path you want to save your files on:",
+                                title="Get save path")
         input_path = dialog.get_input()
 
         if input_path:

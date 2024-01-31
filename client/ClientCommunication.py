@@ -93,8 +93,9 @@ class ClientCommunication:
         pickled_data = pickle.dumps(select_file_names_lst)
 
         # Send the length of the pickled data
-        data_len = str(len(pickled_data))
-        self.client_socket.send(data_len.encode())
+        data_len = len(pickled_data)
+        print(data_len)
+        self.client_socket.send(str(data_len).encode())
 
         # Send the pickled data
         self.client_socket.send(pickled_data)

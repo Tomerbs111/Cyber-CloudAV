@@ -3,61 +3,70 @@ from typing import Any
 
 import sqlite3
 
-
 class UserFiles:
+    CREATE_TABLE_QUERY_FILES = '''
+        CREATE TABLE IF NOT EXISTS {} (
+            id INTEGER PRIMARY KEY,
+            Name TEXT NOT NULL,
+            Size INTEGER NOT NULL,
+            Date TEXT NOT NULL,
+            FileBytes BLOB  
+        );
+    '''
+
+    INSERT_FILE_QUERY = '''
+        INSERT INTO {} (Name, Size, Date, FileBytes)
+        VALUES (?, ?, ?, ?);
+    '''
+
+    REMOVE_FILE_QUERY = '''
+        DELETE FROM {} WHERE Name = ?;
+    '''
+
+    GET_FILE_DATA_QUERY = '''
+        SELECT FileBytes FROM {} WHERE Name = ?;
+    '''
+
+    GET_FILE_SIZE_QUERY = '''
+        SELECT Size FROM {} WHERE Name = ?;
+    '''
+
+    GET_ALL_DATA_QUERY = '''
+        SELECT Name, Size, Date FROM {};
+    '''
+
     def __init__(self, userid: str, database_path='../database/User_info.db'):
         self.conn = sqlite3.connect(database_path)
         self.cur = self.conn.cursor()
         self.userid_db = userid
-        create_table_query_files = f'''
-            CREATE TABLE IF NOT EXISTS {self.userid_db} (
-                id INTEGER PRIMARY KEY,
-                Name TEXT NOT NULL,
-                Size INTEGER NOT NULL,
-                Date TEXT NOT NULL,
-                FileBytes BLOB  
-            );
-            '''
-        self.cur.execute(create_table_query_files)
+        self.cur.execute(self.CREATE_TABLE_QUERY_FILES.format(self.userid_db))
         self.conn.commit()
 
-    def InsertFile(self, name: str, size: int, date: datetime, filebytes: bytes):
-        insert_file = f'''
-        INSERT INTO {self.userid_db} (Name, Size, Date, FileBytes)
-        VALUES (?, ?, ?, ?);
-        '''
-        self.cur.execute(insert_file, (name, size, date, filebytes))
-        self.conn.commit()  # Don't forget to commit the changes
+    def _execute_query(self, query, params=None):
+        if params:
+            return self.cur.execute(query.format(self.userid_db), params).fetchone()
+        else:
+            return self.cur.execute(query.format(self.userid_db)).fetchall()
 
-    def RemoveFile(self, name: str):
-        remove_file = f'''
-        DELETE FROM {self.userid_db} WHERE Name = ?;
-        '''
-        self.cur.execute(remove_file, (name,))
-        self.conn.commit()  # Don't forget to commit the changes
+    def insert_file(self, name: str, size: int, date: datetime, filebytes: bytes):
+        self._execute_query(self.INSERT_FILE_QUERY, (name, size, date, filebytes))
+        self.conn.commit()
 
-    # You might want to add a method to close the connection when you're done
+    def remove_file(self, name: str):
+        self._execute_query(self.REMOVE_FILE_QUERY, (name,))
+        self.conn.commit()
 
     def get_file_data(self, file_name: str) -> bytes:
-        get_data_query = f'''SELECT FileBytes FROM {self.userid_db} WHERE Name = ?;'''
-        data = self.cur.execute(get_data_query, (file_name,)).fetchone()
-
+        data = self._execute_query(self.GET_FILE_DATA_QUERY, (file_name,))
         return data[0] if data else None
 
     def get_file_size(self, file_name: str) -> int:
-        get_size_query = f'''SELECT Size FROM {self.userid_db} WHERE Name = ?;'''
-        size = self.cur.execute(get_size_query, (file_name,)).fetchone()
-
+        size = self._execute_query(self.GET_FILE_SIZE_QUERY, (file_name,))
         return size[0] if size else None
 
     def get_all_data(self):
-        get_size_query = f'''SELECT Name, Size, Date FROM {self.userid_db};'''
-        all_details = self.cur.execute(get_size_query).fetchall()
-
-        if all_details is not None:
-            return all_details
-        else:
-            return "<DONE>"
+        all_details = self._execute_query(self.GET_ALL_DATA_QUERY)
+        return all_details if all_details is not None else "<DONE>"
 
     def close_connection(self):
         self.conn.close()
