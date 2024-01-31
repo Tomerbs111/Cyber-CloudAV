@@ -20,7 +20,7 @@ import re
 
 import ttkbootstrap as ttk
 from customtkinter import *
-from PIL import Image
+from PIL import Image, ImageTk
 
 
 class FileFrame(ttk.Frame):
@@ -85,8 +85,8 @@ class MainPage(ttk.Frame):
         self.setup_action_frame()
         self.setup_file_management_frame()
 
-        narf_thread = threading.Thread(target=self.notify_and_receive_files)
-        narf_thread.start()
+        # narf_thread = threading.Thread(target=self.notify_and_receive_files)
+        # narf_thread.start()
 
     def notify_and_receive_files(self):
         for individual_file in self.client_communicator.notify_and_receive_files():
@@ -119,7 +119,11 @@ class MainPage(ttk.Frame):
         self.f_action = ttk.Frame(master=self.f_data_center)
         self.f_action.place(relx=0.2, rely=0, relwidth=0.8, relheight=0.05)
 
-        ttk.Button(master=self.f_action, text="add file", command=self.add_file).pack(fill='x')
+        ttk.Button(master=self.f_action, text="add file", command=self.add_file).pack(side='left', padx=10)
+        ttk.Button(master=self.f_action, text="save file",
+                   command=self.receive_checked_files).pack(side='left', padx=10)
+        ttk.Button(master=self.f_action, text="delete file").pack(side='left', padx=10)
+        ttk.Button(master=self.f_action, text="copy file").pack(side='left', padx=10)
 
     # ...
 
@@ -130,9 +134,9 @@ class MainPage(ttk.Frame):
         f_file_properties = ttk.Frame(master=f_file_management)
         f_file_properties.place(relx=0, rely=0, relwidth=1, relheight=0.05)
 
-        CTkButton(master=f_file_properties, text="Name").pack(side='left', padx=5)  # Adjusted padding
-        CTkButton(master=f_file_properties, text="Size").pack(side='right', padx=27)  # Adjusted padding
-        CTkButton(master=f_file_properties, text="Upload date").pack(side='right', padx=47)  # Adjusted padding
+        CTkButton(master=f_file_properties, text="Name").pack(side='left', padx=5)
+        CTkButton(master=f_file_properties, text="Size").pack(side='right', padx=27)
+        CTkButton(master=f_file_properties, text="Upload date").pack(side='right', padx=47)
 
         self.f_file_list = ScrolledFrame(master=f_file_management, autohide=False)
         self.f_file_list.place(relx=0, rely=0.05, relwidth=1, relheight=0.95)
@@ -165,10 +169,10 @@ class MainPage(ttk.Frame):
             short_filename, formatted_file_size, short_file_date = \
                 self.prepare_for_display(file_name, file_bytes, file_date)
 
-            send_file_thread = threading.Thread(
-                target=self.client_communicator.send_file(file_name, short_filename, formatted_file_size,
-                                                          short_file_date,file_bytes))
-            send_file_thread.start()
+            # send_file_thread = threading.Thread(
+            #    target=self.client_communicator.send_file(file_name, short_filename, formatted_file_size,
+            #                                              short_file_date, file_bytes))
+            # send_file_thread.start()
 
             self.add_file_frame(short_filename, formatted_file_size, short_file_date)
 
@@ -182,9 +186,50 @@ class MainPage(ttk.Frame):
             select_file_names_lst = self.checked_file_frames()
             self.client_communicator.receive_checked_files(select_file_names_lst, self.save_path)
 
+    from PIL import Image, ImageTk
+
+    # ...
+
     def add_file_frame(self, file_name, file_size, file_date):
         file_frame = FileFrame(self.f_file_list, file_name, file_size, file_date)
+
+        # Check if the file is an image (you can customize the list of image extensions)
+        image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+        is_image = any(file_name.lower().endswith(ext) for ext in image_extensions)
+
+        # Check if the file is a document type (you can customize the list of document extensions)
+        document_extensions = ['.pdf', '.doc', '.docx', '.ppt', '.pptx']
+        is_document = any(file_name.lower().endswith(ext) for ext in document_extensions)
+
+        # Check if the file is a video type (you can customize the list of video extensions)
+        video_extensions = ['.mp4', '.avi', '.mkv', '.mov']
+        is_video = any(file_name.lower().endswith(ext) for ext in video_extensions)
+
+        icon_label = None  # Initialize icon_label variable
+
+        if is_image:
+            icon_path = "../GUI/file_icons/image_icon.png"
+        elif is_document:
+            icon_path = "../GUI/file_icons/documents_icon.png"
+        elif is_video:
+            icon_path = "../GUI/file_icons/video_icon.png"
+
+        if icon_path:
+            # Load the icon image
+            icon_image = Image.open(icon_path)
+            icon_image = icon_image.resize((20, 20))  # Adjust the size as needed
+
+            # Convert the image to a format compatible with tkinter
+            tk_icon_image = ImageTk.PhotoImage(icon_image)
+
+            # Create a label to display the icon
+            icon_label = ttk.Label(master=file_frame, image=tk_icon_image)
+            icon_label.image = tk_icon_image
+            icon_label.pack(side='left', padx=10)  # Adjust the padding as needed
+
         file_frame.pack(expand=True, fill='x', side='top')
+        if icon_label:  # Check if icon_label is created
+            file_frame.icon_label = icon_label  # Store a reference to the icon_label
         self.file_frames.append(file_frame)  # Add FileFrame instance to the list
         self.file_frame_counter += 1
 
