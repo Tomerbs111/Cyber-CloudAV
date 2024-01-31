@@ -1,10 +1,6 @@
-import json
 import pickle
 import socket
-import os
-import sys
 import threading
-from typing import Any
 
 from database.Authentication import UserAuthentication
 from database.UserFiles import UserFiles
@@ -107,7 +103,7 @@ def handle_requests(client_socket: socket, identifier: int) -> None:
                     else:
                         all_data += data
 
-                user_files_manager.InsertFile(file_name, file_size, file_date, all_data)
+                user_files_manager.insert_file(file_name, file_size, file_date, all_data)
                 print(f"File '{file_name}' received and saved in the database")
 
             if action == "<R>":

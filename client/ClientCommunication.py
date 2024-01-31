@@ -8,7 +8,6 @@ class ClientCommunication:
     def __init__(self, client_socket: socket):
         self.client_socket = client_socket
 
-
     def r_when_submit(self, attempt_type, u_email, u_username, u_password):
         self.client_socket.sendall(attempt_type.encode())
         print("status sent")
@@ -29,8 +28,8 @@ class ClientCommunication:
             self.client_socket.sendall(pickle.dumps(field_dict))
 
             server_ans = self.client_socket.recv(1024).decode()
+            print(f"answer: {server_ans}")
             return server_ans
-
 
     def l_when_submit(self, attempt_type, u_email, u_password):
         self.client_socket.sendall(attempt_type.encode())
@@ -51,7 +50,6 @@ class ClientCommunication:
             server_ans = self.client_socket.recv(1024).decode()
             print(f"answer: {server_ans}")
             return server_ans
-
 
     def send_file(self, file_name, short_filename, formatted_file_size, short_file_date, file_bytes):
         """

@@ -286,7 +286,7 @@ class RegistrationApp(ttk.Frame):
             checksum -= 1 if checksum != 0 else 0
 
         if checksum == 3:
-            self.client_communicator.r_when_submit(self.attempt_type, u_email, u_username, u_password)
+            self.server_ans = self.client_communicator.r_when_submit(self.attempt_type, u_email, u_username, u_password)
 
             if self.server_ans == "<EXISTS>":
                 self.ans_email.configure(text="Registration failed. Email is already in use.", bootstyle="danger")
