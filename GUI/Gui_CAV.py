@@ -1,24 +1,9 @@
-# gui.py
-import os
-import pickle
-import random
-import re
 import threading
-import time
-from typing import Any
 from tkinter import filedialog as fd
 from datetime import datetime
-
 import customtkinter
-from customtkinter import *
-import tkinter as tk
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledFrame
-from customtkinter import CTkInputDialog
-
 import re
-
 import ttkbootstrap as ttk
 from customtkinter import *
 from PIL import Image, ImageTk
@@ -116,9 +101,9 @@ class RegistrationApp(ttk.Frame):
     def setup_logo(master, posx, posy):
         cloudav_image = CTkImage(
             light_image=Image.open(
-                r"../GUI/only_logo.png"),
+                r"../GUI/file_icons/only_logo.png"),
             dark_image=Image.open(
-                r"../GUI/only_logo.png"),
+                r"../GUI/file_icons/only_logo.png"),
             size=(75, 75))
 
         cav_image_lbl = CTkLabel(master=master, image=cloudav_image, text="")
@@ -236,7 +221,7 @@ class RegistrationApp(ttk.Frame):
         )
         self.submit_btn.place(relx=posx, rely=posy, relwidth=button_width, relheight=button_height)
 
-    # Modify the switch button setup method in your RegistrationApp class
+    # Modify the switch button setup method in your RegLog class
 
     def setup_switch_button(self, master, switch_msg, posx, posy, switch_command, text_before_btn_text):
         text_before_btn = ttk.Label(
@@ -599,5 +584,5 @@ class MyApp(ttk.Window):
 
 
 if __name__ == "__main__":
-    my_app = MyApp()
+    my_app = MyApp("!")
     my_app.mainloop()

@@ -1,7 +1,7 @@
 import socket
 import os
-from GUI.Gui_CAV import *
 from ClientCommunication import ClientCommunication
+from GUI.MyApp import MyApp
 
 HOST = '127.0.0.1'
 PORT = 40302

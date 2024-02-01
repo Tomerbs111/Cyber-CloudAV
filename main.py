@@ -98,32 +98,70 @@ class MainPage(ttk.Frame):
             self.add_file_frame(short_filename, formatted_file_size, short_file_date)  # a func from Gui_CAV.py
 
     def setup_searchbar_frame(self):
-        # Code for setting up the Action frame
-        f_searchbar = ttk.Frame(master=self)
-        f_searchbar.place(x=0, y=0, relheight=0.1, relwidth=1)
-        ttk.Label(f_searchbar, text="Searchbar Placeholder").pack(fill="both", expand=True)
+        # Code for setting up the Searchbar frame
+        f_searchbar = ttk.Frame(master=self, style="dark")
+        f_searchbar.place(relx=0, rely=0, relheight=0.1, relwidth=1)
+
+        # Logo Placeholder on the Left
+        logo_placeholder = ttk.Label(f_searchbar, text="🌐", font=("Arial", 14))
+        logo_placeholder.pack(side="left", padx=10)
+
+        # Search Entry in the Center
+        search_entry = ttk.Entry(f_searchbar, width=60)  # Adjust the width as needed
+        search_entry.pack(side="left", fill="both", expand=True, padx=(0, 5))  # Reduced padx
+
+        # Search Button in the Center
+        search_button = ttk.Button(f_searchbar, text="Search")
+        search_button.pack(side="left", padx=5)  # Reduced padx
+
+        # Profile Photo Placeholder on the Right
+        profile_photo_placeholder = ttk.Label(f_searchbar, text="👤", font=("Arial", 14))
+        profile_photo_placeholder.pack(side="right", padx=10)
+
+        # Settings Button on the Right
+        settings_button = ttk.Button(f_searchbar, text="Settings")
+        settings_button.pack(side="right", padx=10)
+
+        # Center the entry widget vertically
+        f_searchbar.grid_propagate(False)
+        f_searchbar.update_idletasks()
+        search_entry.place(in_=f_searchbar, anchor="center", relx=0.5, rely=0.5)
 
     def setup_data_center_frame(self):
         # Code for setting up the Data center frame
-        self.f_data_center = ttk.Frame(master=self, bootstyle="dark")
+        self.f_data_center = ttk.Frame(master=self, style="dark")
         self.f_data_center.place(rely=0.1, x=0, relheight=0.9, relwidth=1)
 
     def setup_option_frame(self):
         # Code for setting up the Option frame
-        f_options = ttk.Frame(master=self)
+        f_options = ttk.Frame(master=self, style="dark")
         f_options.place(relx=0, rely=0.1, relwidth=0.2, relheight=1)
-        ttk.Label(f_options, text="Option Placeholder", bootstyle="inverse-dark").pack(fill="both", expand=True)
+
+        ttk.Button(f_options, text="add file", command=self.add_file).pack(side='top', pady=20, anchor='w')
+
+        ttk.Label(f_options, text="Name of user").pack(side='top', pady=10, anchor='w')
+
+
+        ttk.Button(f_options, text="Home").pack(side='top', pady=5, anchor='w')
+        ttk.Button(f_options, text="Shared").pack(side='top', pady=5, anchor='w')
+        ttk.Button(f_options, text="Starred").pack(side='top', pady=5, anchor='w')
+        ttk.Button(f_options, text="Groups").pack(side='top', pady=5, anchor='w')
+        ttk.Button(f_options, text="Recycle bin").pack(side='top', pady=5, anchor='w')
+        ttk.Button(f_options, text="Log out").pack(side='top', pady=5, anchor='w')
+
+        ttk.Label(f_options, text="Storage:").pack(side='top', pady=10, anchor='w')
 
     def setup_action_frame(self):
         # Code for setting up the File tags frame
         self.f_action = ttk.Frame(master=self.f_data_center)
         self.f_action.place(relx=0.2, rely=0, relwidth=0.8, relheight=0.05)
 
-        ttk.Button(master=self.f_action, text="add file", command=self.add_file).pack(side='left', padx=10)
-        ttk.Button(master=self.f_action, text="save file",
-                   command=self.receive_checked_files).pack(side='left', padx=10)
-        ttk.Button(master=self.f_action, text="delete file").pack(side='left', padx=10)
-        ttk.Button(master=self.f_action, text="copy file").pack(side='left', padx=10)
+        ttk.Button(master=self.f_action, text="delete file").pack(side='left', padx=5)
+        ttk.Button(master=self.f_action, text="download file", command=self.receive_checked_files).pack(side='left', padx=5)
+        ttk.Button(master=self.f_action, text="rename file").pack(side='left', padx=5)
+        ttk.Button(master=self.f_action, text="share file").pack(side='left', padx=5)
+        ttk.Button(master=self.f_action, text="copy file").pack(side='left', padx=5)
+        ttk.Button(master=self.f_action, text="favorite").pack(side='left', padx=5)
 
     # ...
 
@@ -170,8 +208,8 @@ class MainPage(ttk.Frame):
                 self.prepare_for_display(file_name, file_bytes, file_date)
 
             # send_file_thread = threading.Thread(
-            #    target=self.client_communicator.send_file(file_name, short_filename, formatted_file_size,
-            #                                              short_file_date, file_bytes))
+            #   target=self.client_communicator.send_file(file_name, short_filename, formatted_file_size,
+            #                                             short_file_date,file_bytes))
             # send_file_thread.start()
 
             self.add_file_frame(short_filename, formatted_file_size, short_file_date)
@@ -185,10 +223,6 @@ class MainPage(ttk.Frame):
         else:
             select_file_names_lst = self.checked_file_frames()
             self.client_communicator.receive_checked_files(select_file_names_lst, self.save_path)
-
-    from PIL import Image, ImageTk
-
-    # ...
 
     def add_file_frame(self, file_name, file_size, file_date):
         file_frame = FileFrame(self.f_file_list, file_name, file_size, file_date)
@@ -205,14 +239,17 @@ class MainPage(ttk.Frame):
         video_extensions = ['.mp4', '.avi', '.mkv', '.mov']
         is_video = any(file_name.lower().endswith(ext) for ext in video_extensions)
 
-        icon_label = None  # Initialize icon_label variable
-
         if is_image:
-            icon_path = "../GUI/file_icons/image_icon.png"
+            # Path to the image icon for images (replace with your path)
+            icon_path = "GUI/file_icons/image_icon.png"
         elif is_document:
-            icon_path = "../GUI/file_icons/documents_icon.png"
+            # Path to the icon for document types (replace with your path)
+            icon_path = "GUI/file_icons/documents_icon.png"
         elif is_video:
-            icon_path = "../GUI/file_icons/video_icon.png"
+            # Path to the icon for video types (replace with your path)
+            icon_path = "GUI/file_icons/video_icon.png"
+        else:
+            icon_path = None
 
         if icon_path:
             # Load the icon image
@@ -228,8 +265,6 @@ class MainPage(ttk.Frame):
             icon_label.pack(side='left', padx=10)  # Adjust the padding as needed
 
         file_frame.pack(expand=True, fill='x', side='top')
-        if icon_label:  # Check if icon_label is created
-            file_frame.icon_label = icon_label  # Store a reference to the icon_label
         self.file_frames.append(file_frame)  # Add FileFrame instance to the list
         self.file_frame_counter += 1
 
