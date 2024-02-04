@@ -7,8 +7,9 @@ import re
 import ttkbootstrap as ttk
 from customtkinter import *
 from PIL import Image, ImageTk
+import tkinter as tk
 
-from GUI.MainPage import MainPage
+from GUI.HomePage import HomePage
 
 
 class RegistrationApp(ttk.Frame):
@@ -59,8 +60,8 @@ class RegistrationApp(ttk.Frame):
                                  submit_command=self.l_when_submit)
         self.setup_confirmation_label(self.login_frame, posy=0.8)
 
-        # Placeholder for animation (you can replace this with your animation logic)
-        ttk.Label(self.animation_frame, text="Animation Placeholder", background="red").pack(fill="both", expand=True)
+        cav_image_lbl = CTkLabel(master=self.animation_frame, text="temp")
+        cav_image_lbl.pack(side="right", expand=True)
 
     def switch_to_registration(self):
         self.register_frame = ttk.Frame(master=self)
@@ -281,7 +282,7 @@ class RegistrationApp(ttk.Frame):
                 self.ans_password.configure(text="Registration failed.", bootstyle="danger")
             elif self.server_ans == "<SUCCESS>":
                 self.l_confirm.configure(text="User Registered successfully", bootstyle="success")
-                self.after(1000, lambda: self.switch_callback(MainPage, self.client_communicator))
+                self.after(1000, lambda: self.switch_callback(HomePage, self.client_communicator))
 
     def l_when_submit(self):
         checksum = 0
@@ -316,4 +317,4 @@ class RegistrationApp(ttk.Frame):
                                             bootstyle="danger")
             else:
                 self.l_confirm.configure(text=f"Welcome back {self.server_ans}", bootstyle="success")
-                self.after(1000, lambda: self.switch_callback(MainPage, self.client_communicator))
+                self.after(1000, lambda: self.switch_callback(HomePage, self.client_communicator))

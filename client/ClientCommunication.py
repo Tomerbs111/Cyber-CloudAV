@@ -9,6 +9,15 @@ class ClientCommunication:
         self.client_socket = client_socket
 
     def r_when_submit(self, attempt_type, u_email, u_username, u_password):
+        """
+        Send attempt_type to server, then send user info if attempt_type is <REGISTER>, and return server_ans.
+
+        :param attempt_type: str, the type of attempt being made
+        :param u_email: str, the user's email
+        :param u_username: str, the user's username
+        :param u_password: str, the user's password
+        :return: str, the server's answer
+        """
         self.client_socket.sendall(attempt_type.encode())
         print("status sent")
 
@@ -32,6 +41,18 @@ class ClientCommunication:
             return server_ans
 
     def l_when_submit(self, attempt_type, u_email, u_password):
+        """
+        Sends the attempt type, user email, and user password to the server, and receives
+        and returns the server's response.
+
+        Parameters:
+            attempt_type (str): The type of login attempt ("<LOGIN>" in this case).
+            u_email (str): The user's email.
+            u_password (str): The user's password.
+
+        Returns:
+            str: The server's response to the login attempt.
+        """
         self.client_socket.sendall(attempt_type.encode())
 
         if attempt_type == "<LOGIN>":
@@ -51,7 +72,7 @@ class ClientCommunication:
             print(f"answer: {server_ans}")
             return server_ans
 
-    def send_file(self, file_name, short_filename, formatted_file_size, short_file_date, file_bytes):
+    def send_file(self, file_name, short_filename, short_file_date, file_bytes):
         """
         Sends a file to the client.
 
@@ -85,6 +106,11 @@ class ClientCommunication:
                 print(f"File '{file_name}' sent successfully")
 
     def receive_checked_files(self, select_file_names_lst, save_path):
+        """
+        Receives a list of checked files, a list of selected file names, and a save path.
+        It sends the files to the client socket, receives a dictionary from the server,
+        and saves the files to the specified save path.
+        """
         self.client_socket.send(b'<R>')
 
         # Convert the list to a pickled string
@@ -112,6 +138,10 @@ class ClientCommunication:
                 print(f"File '{indiv_filename}' received successfully.")
 
     def notify_and_receive_files(self):
+        """
+        Sends a '<NARF>' message through the client socket, receives the length of the pickled data,
+        receives the pickled data, loads the pickled data, and returns the saved file properties list.
+        """
         self.client_socket.send(b'<NARF>')
 
         # Receive the length of the pickled data

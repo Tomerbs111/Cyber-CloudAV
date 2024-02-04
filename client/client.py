@@ -4,7 +4,7 @@ from ClientCommunication import ClientCommunication
 from GUI.MyApp import MyApp
 
 HOST = '127.0.0.1'
-PORT = 40302
+PORT = 40301
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT))
