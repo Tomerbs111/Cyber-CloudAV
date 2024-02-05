@@ -317,6 +317,8 @@ class HomePage(ttk.Frame):
         favorite_button.pack(side='left', padx=5)
 
     def setup_file_management_frame(self):
+        customtkinter.set_appearance_mode("dark")
+
         f_file_management = ttk.Frame(master=self.f_data_center)
         f_file_management.place(relx=0.2, rely=0.05, relwidth=0.8, relheight=0.95)
 
@@ -426,7 +428,6 @@ class HomePage(ttk.Frame):
         else:
             # Use the default Downloads folder
             self.save_path = os.path.join(os.path.expanduser("~"), "Downloads")
-
 
     def switch_to_groups(self):
         print("Switching to groups page")
