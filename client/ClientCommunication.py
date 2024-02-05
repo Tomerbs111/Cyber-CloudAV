@@ -84,7 +84,7 @@ class ClientCommunication:
         file_bytes (bytes): The content of the file in bytes.
         """
         # Send the "S" flag to indicate file transmission
-        self.client_socket.send("S".encode())
+        self.client_socket.send(b'<SEND>')
         # Send the file metadata and content
         self.client_socket.send(pickle.dumps([short_filename, file_bytes, short_file_date]))
 
@@ -111,7 +111,7 @@ class ClientCommunication:
         It sends the files to the client socket, receives a dictionary from the server,
         and saves the files to the specified save path.
         """
-        self.client_socket.send(b'<R>')
+        self.client_socket.send(b'<RECV>')
 
         # Convert the list to a pickled string
         pickled_data = pickle.dumps(select_file_names_lst)
@@ -152,4 +152,39 @@ class ClientCommunication:
 
         # Load the pickled data
         saved_file_prop_lst = pickle.loads(pickled_data)
+
+
         return saved_file_prop_lst
+
+    def delete_checked_files(self, select_file_names_lst):
+        """
+        Receives a list of checked files, a list of selected file names, and deletes the files.
+        """
+        self.client_socket.send(b'<DELETE>')
+
+        # Convert the list to a pickled string
+        pickled_data = pickle.dumps(select_file_names_lst)
+
+        # Send the length of the pickled data
+        self.client_socket.send(pickled_data)
+
+        print("Files deleted successfully.")
+
+
+    def rename_files(self, select_file_name, new_name):
+        """
+        Receives a list of checked files, a list of selected file names, and renames the files.
+        """
+        self.client_socket.send(b'<RENAME>')
+
+        # Convert the list to a pickled string
+        pickled_data = pickle.dumps(select_file_name)
+
+        # Send the length of the pickled data
+        self.client_socket.send(pickled_data)
+
+        # Send the new name
+        self.client_socket.send(new_name.encode())
+
+        print("Files renamed successfully.")
+

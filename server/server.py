@@ -152,12 +152,28 @@ def handle_read_files_action(client_socket, user_files_manager):
     client_socket.send(pickled_fdn_dict)
 
 
-def handle_requests(client_socket, identifier):
+def handle_delete_action(client_socket, user_files_manager):
+    """
+    Handle the delete action by receiving data from the client socket and
+    deleting the specified files using the user files manager.
+
+    :param client_socket: The socket for communication with the client
+    :param user_files_manager: The manager for the user's files
+    """
+
+    pickled_data = client_socket.recv(1024)
+    select_file_names_lst = pickle.loads(pickled_data)
+
+    for individual_file in select_file_names_lst:
+        user_files_manager.delete_file(individual_file)
+
+
+def handle_requests(client_socket: socket, identifier: int):
     """
     A function to handle requests from a client socket.
     """
     try:
-        user_files_manager = UserFiles(f'u_{identifier}')
+        user_files_manager = UserFiles(identifier)
         while True:
             action = client_socket.recv(1024).decode()
 
@@ -168,19 +184,20 @@ def handle_requests(client_socket, identifier):
                 handle_sign_out_action(identifier)
                 break
 
-            elif action == "S":
+            elif action == "<SEND>":
                 handle_save_file_action(client_socket, user_files_manager)
 
-            elif action == "<R>":
+            elif action == "<RECV>":
                 handle_read_files_action(client_socket, user_files_manager)
+
+            elif action == "<DELETE>":
+                handle_delete_action(client_socket, user_files_manager)
 
     except (socket.error, IOError) as e:
         print(f"Error: {e}")
 
     finally:
         client_socket.close()
-
-
 
 
 def send_presaved_files_to_client(client_socket, identifier):

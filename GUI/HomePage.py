@@ -38,7 +38,7 @@ class FileFrame(ttk.Frame):
             if any(fname.lower().endswith(ext) for ext in pdf_extensions):
                 icon_path = "../GUI/file_icons/pdf_file_icon.png"
 
-            powerpoint_extensions = ['.ppt', '.pptx', '.pps', '.ppsx', '.pot', '.potx']
+            powerpoint_extensions = ['.ppt', '.pptx', '.pps', '.pot', '.potx']
             if any(fname.lower().endswith(ext) for ext in powerpoint_extensions):
                 icon_path = "../GUI/file_icons/powerpoint_file_icon.png"
 
@@ -63,22 +63,22 @@ class FileFrame(ttk.Frame):
             if any(fname.lower().endswith(ext) for ext in code_extensions):
                 icon_path = "../GUI/file_icons/code_file_icon.png"
 
+            if icon_path:
+                # Load the icon image
+                icon_image = Image.open(icon_path)
+                icon_image = icon_image.resize((20, 20))  # Adjust the size as needed
+
+                # Convert the image to a format compatible with tkinter
+                tk_icon_image = ImageTk.PhotoImage(icon_image)
+
+                # Create a label to display the icon
+                icon_label = ttk.Label(master=self, image=tk_icon_image)
+                icon_label.image = tk_icon_image
+                icon_label.pack(side='left')
+
         except UnboundLocalError:
             # Handle the UnboundLocalError by using the default icon
             icon_path = "../GUI/file_icons/other_file_icon.png"
-
-        if icon_path:
-            # Load the icon image
-            icon_image = Image.open(icon_path)
-            icon_image = icon_image.resize((20, 20))  # Adjust the size as needed
-
-            # Convert the image to a format compatible with tkinter
-            tk_icon_image = ImageTk.PhotoImage(icon_image)
-
-            # Create a label to display the icon
-            icon_label = ttk.Label(master=self, image=tk_icon_image)
-            icon_label.image = tk_icon_image
-            icon_label.pack(side='left')
 
         lu_filename = ttk.Label(
             master=self,
@@ -107,6 +107,8 @@ class FileFrame(ttk.Frame):
     def uncheck(self):
         self.check_var.set("off")
 
+    def kill_frame(self):
+        self.destroy()
 
 class HomePage(ttk.Frame):
     """
@@ -129,6 +131,8 @@ class HomePage(ttk.Frame):
         self.file_frames = []  # List to store FileFrame instances
         self.file_frame_counter = 0
         self.save_path = None
+        self.rename_button = None
+
 
         # Call the setup functions
         self.setup_searchbar_frame()
@@ -141,11 +145,16 @@ class HomePage(ttk.Frame):
         narf_thread.start()
 
     def notify_and_receive_files(self):
-        for individual_file in self.client_communicator.notify_and_receive_files():
-            file_name, file_bytes, file_date = individual_file
+        narf_answer = self.client_communicator.notify_and_receive_files()
+        if narf_answer == "<NO_DATA>":
+            return
 
-            formatted_file_size = self.format_file_size(file_bytes)  # a func from Gui_CAV.py
-            self.add_file_frame(file_name, formatted_file_size, file_date)  # a func from Gui_CAV.py
+        else:
+            for individual_file in self.client_communicator.notify_and_receive_files():
+                (file_name, file_bytes, file_date) = individual_file
+
+                formatted_file_size = self.format_file_size(file_bytes)  # a func from Gui_CAV.py
+                self.add_file_frame(file_name, formatted_file_size, file_date)  # a func from Gui_CAV.py
 
     def setup_searchbar_frame(self):
         # Code for setting up the Searchbar frame
@@ -256,6 +265,7 @@ class HomePage(ttk.Frame):
             compound='left',
             text="Delete",
             width=30,
+            command=self.delete_checked_file,
             fg_color='transparent'
         )
         delete_button.pack(side='left', padx=5)
@@ -273,15 +283,16 @@ class HomePage(ttk.Frame):
         download_button.pack(side='left', padx=5)
 
         # Rename Button
-        rename_button = CTkButton(
+        self.rename_button = CTkButton(
             master=self.f_action,
             image=CTkImage(Image.open("../GUI/file_icons/rename_icon.png"), size=(20, 20)),
             compound='left',
             text="Rename",
             width=30,
+            command=self.rename_file,
             fg_color='transparent'
         )
-        rename_button.pack(side='left', padx=5)
+        self.rename_button.pack(side='left', padx=5)
 
         # Shared Button
         shared_button = CTkButton(
@@ -345,6 +356,7 @@ class HomePage(ttk.Frame):
     def add_file(self):
         try:
             filetypes = (
+                ('All files', '*.*'),
                 ('text files', '*.txt'),
                 ('All files', '*.*')
             )
@@ -379,6 +391,7 @@ class HomePage(ttk.Frame):
             select_file_names_lst = self.checked_file_frames()
             self.client_communicator.receive_checked_files(select_file_names_lst, self.save_path)
 
+
     def add_file_frame(self, file_name, file_size, file_date):
         file_frame = FileFrame(self.f_file_list, file_name, file_size, file_date)
 
@@ -405,6 +418,14 @@ class HomePage(ttk.Frame):
 
         return short_filename, formatted_file_size, short_file_date
 
+    def destroy_checked_file_frames(self):
+        checked_file_frames_list = []
+        for file_frame in self.file_frames:
+            if file_frame.get_checkvar():
+                checked_file_frames_list.append(file_frame)
+
+        return checked_file_frames_list
+
     def checked_file_frames(self):
         """
         :return: Returns a list of filenames for the checked file frames.
@@ -413,9 +434,32 @@ class HomePage(ttk.Frame):
         for file_frame in self.file_frames:
             if file_frame.get_checkvar():
                 checked_file_frames_list.append(file_frame.get_filename())
-                file_frame.uncheck()  # Uncheck the checkbox
+
+        if len(checked_file_frames_list) > 1:
+            self.rename_button.pack_forget()
 
         return checked_file_frames_list
+
+    def delete_checked_file(self):
+        frames_to_delete = self.destroy_checked_file_frames()
+        names_to_delete_lst = self.checked_file_frames()
+
+        # Notify the server to delete the files
+        self.client_communicator.delete_checked_files(names_to_delete_lst)
+
+        for file_frame in frames_to_delete:
+            file_frame.kill_frame()
+
+        # Optional: Update the file frame counter if needed
+        self.file_frame_counter = len(self.file_frames)
+
+    def rename_file(self):
+        file_to_rename_lst = self.checked_file_frames()
+
+        if len(file_to_rename_lst) == 1:
+            self.client_communicator.rename_files(file_to_rename_lst[0], )
+
+
 
     def get_save_path_dialog(self):
         dialog = CTkInputDialog(text="Write the path you want to save your files on:",

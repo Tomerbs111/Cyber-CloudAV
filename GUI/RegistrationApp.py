@@ -10,6 +10,7 @@ from PIL import Image, ImageTk
 import tkinter as tk
 
 from GUI.HomePage import HomePage
+from tkvideo import tkvideo
 
 
 class RegistrationApp(ttk.Frame):
@@ -26,7 +27,7 @@ class RegistrationApp(ttk.Frame):
         self.login_frame.place(x=0, y=0, relwidth=0.45, relheight=1)
 
         # Frame for animation (right side)
-        self.animation_frame = ttk.Frame(master=self)
+        self.animation_frame = CTkFrame(master=self, )
         self.animation_frame.place(relx=0.45, y=0, relwidth=0.55, relheight=1)
 
         # Instance variables for all answers
@@ -60,8 +61,15 @@ class RegistrationApp(ttk.Frame):
                                  submit_command=self.l_when_submit)
         self.setup_confirmation_label(self.login_frame, posy=0.8)
 
-        cav_image_lbl = CTkLabel(master=self.animation_frame, text="temp")
-        cav_image_lbl.pack(side="right", expand=True)
+        cav_image_lbl = tk.Label(master=self.animation_frame)
+        cav_image_lbl.place(relx=0, rely=0, relwidth=1, relheight=1)
+        video_path = r'..\GUI\file_icons\video_reglog2.mp4'  # Replace with your actual video file path
+
+        # Create an instance of tkvideo
+        video_player = tkvideo(video_path, cav_image_lbl, loop=1, size=(900, 900))
+
+        # Set the video file path
+        video_player.play()
 
     def switch_to_registration(self):
         self.register_frame = ttk.Frame(master=self)
@@ -130,7 +138,7 @@ class RegistrationApp(ttk.Frame):
             master=master,
             text="Email",
             font=("Calibri", 15),
-            bootstyle="info"
+            style="info"
 
         )
         l_email.place(relx=posx, rely=posy, relwidth=label_width, relheight=label_height)
@@ -138,7 +146,7 @@ class RegistrationApp(ttk.Frame):
         self.email_entry = ttk.Entry(
             master=master,
             width=60,  # Set the width based on the desired entry width
-            bootstyle="info"
+            style="primary",
 
         )
         self.email_entry.place(relx=posx, rely=posy + label_height, relwidth=entry_width, relheight=entry_height)
@@ -160,14 +168,14 @@ class RegistrationApp(ttk.Frame):
             master=master,
             text="Username",
             font=("Calibri", 15),
-            bootstyle="info"
+            style="info"
         )
         l_username.place(relx=posx, rely=posy, relwidth=label_width, relheight=label_height)
 
         self.username_entry = ttk.Entry(
             master=master,
             width=60,  # Set the width based on the desired entry width
-            bootstyle="info"
+            style="primary"
         )
         self.username_entry.place(relx=posx, rely=posy + label_height, relwidth=entry_width, relheight=entry_height)
         self.ans_username = ttk.Label(
@@ -185,7 +193,7 @@ class RegistrationApp(ttk.Frame):
             master=master,
             text="Password",
             font=("Calibri", 15),
-            bootstyle="info"
+            style="info"
 
         )
         l_password.place(relx=posx, rely=posy, relwidth=label_width, relheight=label_height)
@@ -193,7 +201,7 @@ class RegistrationApp(ttk.Frame):
         self.password_entry = ttk.Entry(
             master=master,
             width=60,  # Set the width based on the desired entry width
-            bootstyle="info"
+            style="primary"
 
         )
         self.password_entry.place(relx=posx, rely=posy + label_height, relwidth=entry_width, relheight=entry_height)
@@ -220,7 +228,7 @@ class RegistrationApp(ttk.Frame):
             master=master,
             text=submit_title,
             command=submit_command,
-            bootstyle="info"
+            style="info"
         )
         self.submit_btn.place(relx=posx, rely=posy, relwidth=button_width, relheight=button_height)
 
