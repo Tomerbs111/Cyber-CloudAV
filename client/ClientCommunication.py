@@ -130,7 +130,6 @@ class ClientCommunication:
 
         # Load the dictionary
         file_data_name_dict = pickle.loads(pickled_fdn_dict)
-
         for indiv_filename, indiv_filebytes in file_data_name_dict.items():
             file_path = os.path.join(save_path, indiv_filename)
             with open(file_path, "wb") as file:
@@ -153,7 +152,6 @@ class ClientCommunication:
         # Load the pickled data
         saved_file_prop_lst = pickle.loads(pickled_data)
 
-
         return saved_file_prop_lst
 
     def delete_checked_files(self, select_file_names_lst):
@@ -169,7 +167,6 @@ class ClientCommunication:
         self.client_socket.send(pickled_data)
 
         print("Files deleted successfully.")
-
 
     def rename_files(self, select_file_name, new_name):
         """
@@ -187,4 +184,3 @@ class ClientCommunication:
         self.client_socket.send(new_name.encode())
 
         print("Files renamed successfully.")
-

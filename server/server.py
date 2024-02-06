@@ -138,7 +138,7 @@ def handle_read_files_action(client_socket, user_files_manager):
 
     file_data_name_dict = {}
     for individual_file in select_file_names_lst:
-        file_data = user_files_manager.get_file_data(individual_file)
+        file_data = user_files_manager.get_file_data(individual_file)[0]
         file_data_name_dict[individual_file] = file_data
 
     # Convert the dictionary to a pickled string
@@ -264,9 +264,8 @@ try:
         client_socket, client_address = server_socket.accept()
         print(f"Accepted connection from {client_address}")
 
-        identifier = None  # Initialize identifier outside the loop
+        identifier = None
 
-        # Start a new thread to handle registration or login
         client_register_login_handler = threading.Thread(target=handle_register_login,
                                                          args=(client_socket, identifier))
         client_register_login_handler.start()
