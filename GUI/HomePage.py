@@ -110,6 +110,7 @@ class FileFrame(ttk.Frame):
     def kill_frame(self):
         self.destroy()
 
+
 class HomePage(ttk.Frame):
     """
     Initialize the class with the parent, switch_callback, and client_communicator parameters.
@@ -132,7 +133,6 @@ class HomePage(ttk.Frame):
         self.file_frame_counter = 0
         self.save_path = None
         self.rename_button = None
-
 
         # Call the setup functions
         self.setup_searchbar_frame()
@@ -391,7 +391,6 @@ class HomePage(ttk.Frame):
             select_file_names_lst = self.checked_file_frames()
             self.client_communicator.receive_checked_files(select_file_names_lst, self.save_path)
 
-
     def add_file_frame(self, file_name, file_size, file_date):
         file_frame = FileFrame(self.f_file_list, file_name, file_size, file_date)
 
@@ -434,9 +433,7 @@ class HomePage(ttk.Frame):
         for file_frame in self.file_frames:
             if file_frame.get_checkvar():
                 checked_file_frames_list.append(file_frame.get_filename())
-
-        if len(checked_file_frames_list) > 1:
-            self.rename_button.pack_forget()
+                file_frame.uncheck()
 
         return checked_file_frames_list
 
@@ -458,8 +455,6 @@ class HomePage(ttk.Frame):
 
         if len(file_to_rename_lst) == 1:
             self.client_communicator.rename_files(file_to_rename_lst[0], )
-
-
 
     def get_save_path_dialog(self):
         dialog = CTkInputDialog(text="Write the path you want to save your files on:",

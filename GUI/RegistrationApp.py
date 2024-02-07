@@ -55,9 +55,9 @@ class RegistrationApp(ttk.Frame):
                                  switch_command=self.switch_to_registration,
                                  text_before_btn_text="Doesn't have an account? Click here to ")
 
-        self.setup_email(self.login_frame, posx=0.02, posy=0.2)
-        self.setup_password(self.login_frame, posx=0.02, posy=0.35)
-        self.setup_submit_button(self.login_frame, "Sign in", posx=0.02, posy=0.55,
+        self.setup_email(self.login_frame, posx=0.04, posy=0.2)
+        self.setup_password(self.login_frame, posx=0.04, posy=0.35)
+        self.setup_submit_button(self.login_frame, "Sign in", posx=0.04, posy=0.55,
                                  submit_command=self.l_when_submit)
         self.setup_confirmation_label(self.login_frame, posy=0.8)
 
@@ -79,10 +79,10 @@ class RegistrationApp(ttk.Frame):
                                  switch_command=self.switch_to_login,
                                  text_before_btn_text="Already have an account? Click here to ")
 
-        self.setup_email(self.register_frame, posx=0.02, posy=0.2)
-        self.setup_username(self.register_frame, posx=0.02, posy=0.35)
-        self.setup_password(self.register_frame, posx=0.02, posy=0.50)
-        self.setup_submit_button(self.register_frame, "Sign up", posx=0.02, posy=0.70,
+        self.setup_email(self.register_frame, posx=0.04, posy=0.2)
+        self.setup_username(self.register_frame, posx=0.04, posy=0.35)
+        self.setup_password(self.register_frame, posx=0.04, posy=0.50)
+        self.setup_submit_button(self.register_frame, "Sign up", posx=0.04, posy=0.70,
                                  submit_command=self.r_when_submit)
         self.setup_confirmation_label(self.register_frame, posy=0.8)
 
@@ -98,9 +98,9 @@ class RegistrationApp(ttk.Frame):
                                  switch_command=self.switch_to_registration,
                                  text_before_btn_text="Doesn't have an account? Click here to ")
 
-        self.setup_email(self.login_frame, posx=0.02, posy=0.2)
-        self.setup_password(self.login_frame, posx=0.02, posy=0.35)
-        self.setup_submit_button(self.login_frame, "Sign in", posx=0.02, posy=0.55,
+        self.setup_email(self.login_frame, posx=0.04, posy=0.2)
+        self.setup_password(self.login_frame, posx=0.04, posy=0.35)
+        self.setup_submit_button(self.login_frame, "Sign in", posx=0.04, posy=0.55,
                                  submit_command=self.l_when_submit)
         self.setup_confirmation_label(self.login_frame, posy=0.8)
 
