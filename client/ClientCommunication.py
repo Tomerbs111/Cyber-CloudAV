@@ -118,7 +118,6 @@ class ClientCommunication:
 
         # Send the length of the pickled data
         data_len = len(pickled_data)
-        print(data_len)
         self.client_socket.send(str(data_len).encode())
 
         # Send the pickled data
@@ -168,19 +167,35 @@ class ClientCommunication:
 
         print("Files deleted successfully.")
 
-    def rename_files(self, select_file_name, new_name):
+    import pickle
+
+    def rename_files(self, rename_data):
         """
-        Receives a list of checked files, a list of selected file names, and renames the files.
+        Receives a list of checked files, a list of tuples containing old names and new names, and renames the files.
         """
         self.client_socket.send(b'<RENAME>')
 
-        # Convert the list to a pickled string
-        pickled_data = pickle.dumps(select_file_name)
-
-        # Send the length of the pickled data
+        # Convert the list of tuples to a pickled string
+        pickled_data = pickle.dumps(rename_data)
+        self.client_socket.send(len(pickled_data).to_bytes(4, byteorder='big'))
         self.client_socket.send(pickled_data)
 
-        # Send the new name
-        self.client_socket.send(new_name.encode())
-
         print("Files renamed successfully.")
+
+
+    def favorite_file(self, file_name, switch_value):
+        if switch_value == "on":
+            self.client_socket.send(b'<FAVORITE>')
+
+            self.client_socket.send(file_name.encode('utf-8'))
+            print(f"File '{file_name}' favorited.")
+
+        else:
+            self.client_socket.send(b'<UNFAVORITE>')
+
+            self.client_socket.send(file_name.encode('utf-8'))
+            print(f"File '{file_name}' unfavorited.")
+
+
+
+

@@ -33,7 +33,7 @@ class UserFiles:
     '''
 
     GET_ALL_DATA_QUERY = '''
-        SELECT Name, Size, Date FROM Files WHERE Owner = ?;
+        SELECT Name, Size, Date, Favorite FROM Files WHERE Owner = ?;
     '''
 
     RENAME_FILE_QUERY = '''
@@ -92,6 +92,9 @@ class UserFiles:
     def set_favorite_status(self, file_name: str, favorite: int):
         self._execute_query(self.SET_FAVORITE_STATUS_QUERY, (favorite, self.userid_db, file_name))
         self.conn.commit()
+
+    def set_unfavorite_status(self, file_name: str):
+        self.set_favorite_status(file_name, 0)
 
     def close_connection(self):
         self.conn.close()

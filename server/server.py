@@ -151,6 +151,8 @@ def handle_read_files_action(client_socket, user_files_manager):
     # Send the pickled dictionary
     client_socket.send(pickled_fdn_dict)
 
+    print("Files sent successfully.")
+
 
 def handle_delete_action(client_socket, user_files_manager):
     """
@@ -167,8 +169,41 @@ def handle_delete_action(client_socket, user_files_manager):
     for individual_file in select_file_names_lst:
         user_files_manager.delete_file(individual_file)
 
+    print("Files deleted successfully.")
 
-def handle_requests(client_socket: socket, identifier: int):
+
+def handle_rename_action(client_socket, user_files_manager):
+    # Receive the pickled data containing a single tuple (old_name, new_name)
+    pickled_data_length = client_socket.recv(4)
+    data_length = int.from_bytes(pickled_data_length, byteorder='big')
+    pickled_data = client_socket.recv(data_length)
+
+    rename_data = pickle.loads(pickled_data)
+
+    # Unpickle the data to get the tuple (old_name, new_name)
+    old_name, new_name = rename_data
+
+    # Perform renaming for a single file
+    user_files_manager.rename_file(old_name, new_name)
+
+    print("File renamed successfully.")
+
+
+def handle_favorite_action(client_socket, user_files_manager):
+    favorite_file_name = client_socket.recv(1024).decode('utf-8')
+    user_files_manager.set_favorite_status(favorite_file_name, 1)
+
+    print("File favorited successfully.")
+
+
+def handle_unfavorite_action(client_socket, user_files_manager):
+    unfavorite_file_name = client_socket.recv(1024).decode('utf-8')
+    user_files_manager.set_unfavorite_status(unfavorite_file_name)
+
+    print("File unfavorited successfully.")
+
+
+def handle_requests(client_socket: socket, identifier):
     """
     A function to handle requests from a client socket.
     """
@@ -193,6 +228,15 @@ def handle_requests(client_socket: socket, identifier: int):
             elif action == "<DELETE>":
                 handle_delete_action(client_socket, user_files_manager)
 
+            elif action == "<RENAME>":
+                handle_rename_action(client_socket, user_files_manager)
+
+            elif action == "<FAVORITE>":
+                handle_favorite_action(client_socket, user_files_manager)
+
+            elif action == "<UNFAVORITE>":
+                handle_unfavorite_action(client_socket, user_files_manager)
+
     except (socket.error, IOError) as e:
         print(f"Error: {e}")
 
@@ -205,8 +249,8 @@ def send_presaved_files_to_client(client_socket, identifier):
     Send presaved files to the client using the provided client socket and identifier.
     """
     try:
-        user_files_manager = UserFiles(f'u_{identifier}')
-        presaved_files_dict = user_files_manager.get_all_data(identifier)
+        user_files_manager = UserFiles(identifier)
+        presaved_files_dict = user_files_manager.get_all_data()
 
         # Send the presaved files dictionary to the client
         client_socket.sendall(pickle.dumps(presaved_files_dict))

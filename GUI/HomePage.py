@@ -12,7 +12,7 @@ from GUI.GroupsPage import GroupsPage
 
 
 class FileFrame(ttk.Frame):
-    def __init__(self, master, fname, fsize, fdate):
+    def __init__(self, master, fname, fsize, fdate, favorite_callback=None):
         super().__init__(master)
         self.fname = fname
         self.fsize = fsize
@@ -23,80 +23,94 @@ class FileFrame(ttk.Frame):
                                                variable=self.check_var, onvalue="on", offvalue="off")
         self.mark_for_action.pack(side='left', padx=5)
 
-        try:
-            # Check if the file is an image (you can customize the list of image extensions)
-            image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
-            if any(fname.lower().endswith(ext) for ext in image_extensions):
-                icon_path = "../GUI/file_icons/image_file_icon.png"
+        # Set the default icon path
+        icon_path = "../GUI/file_icons/other_file_icon.png"
 
-            # Check if the file is a document type (you can customize the list of document extensions)
-            document_extensions = ['.doc', '.docx']
-            if any(fname.lower().endswith(ext) for ext in document_extensions):
-                icon_path = "../GUI/file_icons/word_file_icon.png"
+        # Check file type and set icon accordingly
+        if self.is_image(fname):
+            icon_path = "../GUI/file_icons/image_file_icon.png"
+        elif self.is_document(fname):
+            icon_path = "../GUI/file_icons/word_file_icon.png"
+        elif self.is_pdf(fname):
+            icon_path = "../GUI/file_icons/pdf_file_icon.png"
+        elif self.is_powerpoint(fname):
+            icon_path = "../GUI/file_icons/powerpoint_file_icon.png"
+        elif self.is_text(fname):
+            icon_path = "../GUI/file_icons/text_file_icon.png"
+        elif self.is_zip(fname):
+            icon_path = "../GUI/file_icons/zip_file_icon.png"
+        elif self.is_excel(fname):
+            icon_path = "../GUI/file_icons/excel_file_icon.png"
+        elif self.is_video(fname):
+            icon_path = "../GUI/file_icons/video_file_icon.png"
+        elif self.is_code(fname):
+            icon_path = "../GUI/file_icons/code_file_icon.png"
 
-            pdf_extensions = ['.pdf', '.PDF']
-            if any(fname.lower().endswith(ext) for ext in pdf_extensions):
-                icon_path = "../GUI/file_icons/pdf_file_icon.png"
+        # Load the icon image
+        icon_image = Image.open(icon_path)
+        icon_image = icon_image.resize((25, 25))
 
-            powerpoint_extensions = ['.ppt', '.pptx', '.pps', '.pot', '.potx']
-            if any(fname.lower().endswith(ext) for ext in powerpoint_extensions):
-                icon_path = "../GUI/file_icons/powerpoint_file_icon.png"
+        tk_icon_image = ImageTk.PhotoImage(icon_image)
 
-            text_extensions = ['.txt']
-            if any(fname.lower().endswith(ext) for ext in text_extensions):
-                icon_path = "../GUI/file_icons/text_file_icon.png"
+        # Create a label to display the icon
+        icon_label = ttk.Label(master=self, image=tk_icon_image)
+        icon_label.image = tk_icon_image
+        icon_label.pack(side='left', padx=(0, 5), pady=5)
 
-            zip_extensions = ['.zip', '.rar', '.7z', '.tar', '.gz']
-            if any(fname.lower().endswith(ext) for ext in zip_extensions):
-                icon_path = "../GUI/file_icons/zip_file_icon.png"
+        text_size = 12
 
-            excel_extensions = ['.xlsx', '.dbf', '.csv', '.xls', '.xlsm']
-            if any(fname.lower().endswith(ext) for ext in excel_extensions):
-                icon_path = "../GUI/file_icons/excel_file_icon.png"
+        self.check_favorite = StringVar(value="off")
+        self.favorite_callback = favorite_callback
 
-            # Check if the file is a video type (you can customize the list of video extensions)
-            video_extensions = ['.mp4', '.avi', '.mkv', '.mov', '.mp3', '.asd']
-            if any(fname.lower().endswith(ext) for ext in video_extensions):
-                icon_path = "../GUI/file_icons/video_file_icon.png"
-
-            code_extensions = ['.py', '.c', '.cpp', '.java', '.js', '.php', '.css', '.cs']
-            if any(fname.lower().endswith(ext) for ext in code_extensions):
-                icon_path = "../GUI/file_icons/code_file_icon.png"
-
-            if icon_path:
-                # Load the icon image
-                icon_image = Image.open(icon_path)
-                icon_image = icon_image.resize((20, 20))  # Adjust the size as needed
-
-                # Convert the image to a format compatible with tkinter
-                tk_icon_image = ImageTk.PhotoImage(icon_image)
-
-                # Create a label to display the icon
-                icon_label = ttk.Label(master=self, image=tk_icon_image)
-                icon_label.image = tk_icon_image
-                icon_label.pack(side='left')
-
-        except UnboundLocalError:
-            # Handle the UnboundLocalError by using the default icon
-            icon_path = "../GUI/file_icons/other_file_icon.png"
-
-        lu_filename = ttk.Label(
+        self.favorite_button = CTkButton(
             master=self,
-            text=self.fname
+            image=CTkImage(Image.open("../GUI/file_icons/star_icon.png"), size=(20, 20)),
+            compound='left',
+            text="",
+            width=30,
+            fg_color='transparent',
+            command=self.toggle_favorite  # Assign the command to the function
         )
-        lu_filename.pack(side='left', padx=5)
 
-        lu_size = ttk.Label(
-            master=self,
-            text=self.fsize
-        )
-        lu_size.pack(side='right', padx=27)
+        self.favorite_button.pack(side='right', padx=5, anchor='e')
 
-        lu_date_mod = ttk.Label(
+        # Create labels with larger text
+        self.lu_filename = ttk.Label(
             master=self,
-            text=self.fdate
+            text=self.fname,
+            font=("Arial", text_size)
         )
-        lu_date_mod.pack(side='right', padx=43)
+        self.lu_filename.pack(side='left', padx=(0, 5), pady=5, anchor='w')
+
+        # Pack the size label with proper alignment
+        self.lu_size = ttk.Label(
+            master=self,
+            text=self.fsize,
+            font=("Arial", text_size)
+        )
+        self.lu_size.pack(side='right', padx=(0, 27), pady=5, anchor='e')  # Adjust padx as needed
+
+        # Pack the date label with proper alignment
+        self.lu_date_mod = ttk.Label(
+            master=self,
+            text=self.fdate,
+            font=("Arial", text_size)
+        )
+        self.lu_date_mod.pack(side='right', padx=(0, 65), pady=5, anchor='e')
+
+    def toggle_favorite(self):
+        current_value = self.check_favorite.get()
+        new_value = "on" if current_value == "off" else "off"
+        self.check_favorite.set(new_value)
+
+        # Change the button icon based on the new value
+        new_icon_path = "../GUI/file_icons/star_icon_light.png" if new_value == "on" else "../GUI/file_icons/star_icon.png"
+        new_icon = CTkImage(Image.open(new_icon_path), size=(20, 20))
+        self.favorite_button.configure(image=new_icon)
+
+        # Notify the HomePage when the favorite button is pressed
+        if self.favorite_callback:
+            self.favorite_callback(self, new_value)
 
     def get_checkvar(self) -> bool:
         return self.check_var.get() == "on"
@@ -104,11 +118,51 @@ class FileFrame(ttk.Frame):
     def get_filename(self):
         return self.fname
 
+    def set_filename(self, fname):
+        self.fname = fname
+        self.lu_filename.configure(text=fname)
+
     def uncheck(self):
         self.check_var.set("off")
 
     def kill_frame(self):
         self.destroy()
+
+    def is_image(self, fname):
+        image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+        return any(fname.lower().endswith(ext) for ext in image_extensions)
+
+    def is_document(self, fname):
+        document_extensions = ['.doc', '.docx']
+        return any(fname.lower().endswith(ext) for ext in document_extensions)
+
+    def is_pdf(self, fname):
+        pdf_extensions = ['.pdf']
+        return any(fname.lower().endswith(ext) for ext in pdf_extensions)
+
+    def is_powerpoint(self, fname):
+        powerpoint_extensions = ['.ppt', '.pptx', '.pps', '.pot', '.potx', '.ppsx']
+        return any(fname.lower().endswith(ext) for ext in powerpoint_extensions)
+
+    def is_text(self, fname):
+        text_extensions = ['.txt']
+        return any(fname.lower().endswith(ext) for ext in text_extensions)
+
+    def is_zip(self, fname):
+        zip_extensions = ['.zip', '.rar', '.7z', '.tar', '.gz']
+        return any(fname.lower().endswith(ext) for ext in zip_extensions)
+
+    def is_excel(self, fname):
+        excel_extensions = ['.xlsx', '.dbf', '.csv', '.xls', '.xlsm']
+        return any(fname.lower().endswith(ext) for ext in excel_extensions)
+
+    def is_video(self, fname):
+        video_extensions = ['.mp4', '.avi', '.mkv', '.mov', '.mp3', '.asd']
+        return any(fname.lower().endswith(ext) for ext in video_extensions)
+
+    def is_code(self, fname):
+        code_extensions = ['.py', '.c', '.cpp', '.java', '.js', '.php', '.css', '.cs']
+        return any(fname.lower().endswith(ext) for ext in code_extensions)
 
 
 class HomePage(ttk.Frame):
@@ -151,10 +205,10 @@ class HomePage(ttk.Frame):
 
         else:
             for individual_file in self.client_communicator.notify_and_receive_files():
-                (file_name, file_bytes, file_date) = individual_file
+                (file_name, file_bytes, file_date, favorite) = individual_file
 
                 formatted_file_size = self.format_file_size(file_bytes)  # a func from Gui_CAV.py
-                self.add_file_frame(file_name, formatted_file_size, file_date)  # a func from Gui_CAV.py
+                self.add_file_frame(file_name, formatted_file_size, file_date, favorite)  # a func from Gui_CAV.py
 
     def setup_searchbar_frame(self):
         # Code for setting up the Searchbar frame
@@ -226,7 +280,7 @@ class HomePage(ttk.Frame):
             f_options,
             text="Favorites",
             image=CTkImage(Image.open("../GUI/file_icons/star_icon.png"), size=(20, 20)),
-            compound='left'
+            compound='left',
         ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
 
         CTkButton(
@@ -289,7 +343,7 @@ class HomePage(ttk.Frame):
             compound='left',
             text="Rename",
             width=30,
-            command=self.rename_file,
+            command=self.rename_checked_file,
             fg_color='transparent'
         )
         self.rename_button.pack(side='left', padx=5)
@@ -315,17 +369,6 @@ class HomePage(ttk.Frame):
             fg_color='transparent'
         )
         copy_button.pack(side='left', padx=5)
-
-        # Favorite Button
-        favorite_button = CTkButton(
-            master=self.f_action,
-            image=CTkImage(Image.open("../GUI/file_icons/star_icon.png"), size=(20, 20)),
-            compound='left',
-            text="Favorite",
-            width=30,
-            fg_color='transparent'
-        )
-        favorite_button.pack(side='left', padx=5)
 
     def setup_file_management_frame(self):
         customtkinter.set_appearance_mode("dark")
@@ -379,24 +422,38 @@ class HomePage(ttk.Frame):
                                                           short_file_date, file_bytes))
             send_file_thread.start()
 
-            self.add_file_frame(short_filename, formatted_file_size, short_file_date)
+            favorite = 0
+
+            self.add_file_frame(short_filename, formatted_file_size, short_file_date, favorite)
 
         except FileNotFoundError:  # in cases of an error
             return
 
-    def receive_checked_files(self):
-        if self.save_path is None:
-            self.get_save_path_dialog()
-        else:
-            select_file_names_lst = self.checked_file_frames()
-            self.client_communicator.receive_checked_files(select_file_names_lst, self.save_path)
-
-    def add_file_frame(self, file_name, file_size, file_date):
-        file_frame = FileFrame(self.f_file_list, file_name, file_size, file_date)
+    def add_file_frame(self, file_name, file_size, file_date, favorite):
+        file_frame = FileFrame(self.f_file_list, file_name, file_size, file_date,
+                               favorite_callback=self.favorite_file_pressed)
 
         file_frame.pack(expand=True, fill='x', side='top')
         self.file_frames.append(file_frame)  # Add FileFrame instance to the list
         self.file_frame_counter += 1
+
+        if favorite == 1:
+            file_frame.favorite_button.configure(
+                image=CTkImage(Image.open("../GUI/file_icons/star_icon_light.png"), size=(20, 20)))
+            file_frame.check_favorite.set("on")
+
+    def favorite_file_pressed(self, file_frame, new_value):
+        file_name = file_frame.get_filename()
+        if new_value == "on":
+            favorite_thread = threading.Thread(
+                target=self.client_communicator.favorite_file,
+                args=(file_name, new_value))
+            favorite_thread.start()
+        else:
+            unfavorite_thread = threading.Thread(
+                target=self.client_communicator.favorite_file,
+                args=(file_name, new_value))
+            unfavorite_thread.start()
 
     @staticmethod
     def format_file_size(file_size_bytes):
@@ -417,44 +474,75 @@ class HomePage(ttk.Frame):
 
         return short_filename, formatted_file_size, short_file_date
 
-    def destroy_checked_file_frames(self):
+    # Inside the HomePage class
+
+    def checked_file_frames(self):
+        """
+        :return: Returns a list of checked FileFrame objects.
+        """
         checked_file_frames_list = []
         for file_frame in self.file_frames:
             if file_frame.get_checkvar():
                 checked_file_frames_list.append(file_frame)
-
-        return checked_file_frames_list
-
-    def checked_file_frames(self):
-        """
-        :return: Returns a list of filenames for the checked file frames.
-        """
-        checked_file_frames_list = []
-        for file_frame in self.file_frames:
-            if file_frame.get_checkvar():
-                checked_file_frames_list.append(file_frame.get_filename())
                 file_frame.uncheck()
 
         return checked_file_frames_list
 
+    # Modify the delete_checked_file method accordingly
+
     def delete_checked_file(self):
-        frames_to_delete = self.destroy_checked_file_frames()
-        names_to_delete_lst = self.checked_file_frames()
+        frames_to_delete = self.checked_file_frames()
+        names_to_delete_lst = [file_frame.get_filename() for file_frame in frames_to_delete]
+        print(names_to_delete_lst)
 
-        # Notify the server to delete the files
         self.client_communicator.delete_checked_files(names_to_delete_lst)
-
         for file_frame in frames_to_delete:
             file_frame.kill_frame()
 
         # Optional: Update the file frame counter if needed
         self.file_frame_counter = len(self.file_frames)
 
-    def rename_file(self):
-        file_to_rename_lst = self.checked_file_frames()
+    # Modify the receive_checked_files method accordingly
 
-        if len(file_to_rename_lst) == 1:
-            self.client_communicator.rename_files(file_to_rename_lst[0], )
+    def receive_checked_files(self):
+        if self.save_path is None:
+            self.get_save_path_dialog()
+        else:
+            select_file_frames = self.checked_file_frames()
+            select_file_names_lst = [file_frame.get_filename() for file_frame in select_file_frames]
+
+            receive_thread = threading.Thread(
+                target=self.client_communicator.receive_checked_files,
+                args=(select_file_names_lst, self.save_path))
+            receive_thread.start()
+
+    def rename_checked_file(self):
+        try:
+            file_frame = self.checked_file_frames()[0]
+            old_name = file_frame.get_filename()
+
+            # Extract the file format from the old name
+            file_format = os.path.splitext(old_name)[1]
+
+            new_name_dialog = CTkInputDialog(text=f"Replace {old_name} with:",
+                                             title="Rename file")
+            new_name = new_name_dialog.get_input()
+
+            if new_name:
+                # Append the file format to the new name
+                new_name_with_format = f"{new_name}{file_format}"
+
+                # Modify the rename_files call to pass a list of tuples
+                rename_thread = threading.Thread(
+                    target=self.client_communicator.rename_files,
+                    args=((old_name, new_name_with_format),))
+                rename_thread.start()
+
+                # Update the file frame label with the new name
+                file_frame.set_filename(new_name_with_format)
+                file_frame.update_idletasks()  # Ensure the label is updated immediately
+        except IndexError:
+            pass
 
     def get_save_path_dialog(self):
         dialog = CTkInputDialog(text="Write the path you want to save your files on:",
@@ -471,28 +559,3 @@ class HomePage(ttk.Frame):
     def switch_to_groups(self):
         print("Switching to groups page")
         self.switch_callback(GroupsPage, self.client_communicator)
-
-
-class MyApp(ttk.Window):
-    def __init__(self, client_communicator):
-        super().__init__(themename="darkly")
-        self.geometry("1150x710")
-        self.title("Cloud-AV")
-
-        self.client_communicator = client_communicator
-        self.current_frame = None
-        self.switch_frame(HomePage, self.client_communicator)
-
-    def switch_frame(self, frame_class, *args):
-        new_frame = frame_class(self, self.switch_frame, *args)
-
-        if self.current_frame:
-            self.current_frame.pack_forget()
-
-        new_frame.pack(fill="both", expand=True)
-        self.current_frame = new_frame
-
-
-if __name__ == "__main__":
-    my_app = MyApp("1")
-    my_app.mainloop()
