@@ -2,8 +2,6 @@ import threading
 from tkinter import filedialog as fd
 from datetime import date
 import customtkinter
-from ttkbootstrap.scrolled import ScrolledFrame
-import re
 import ttkbootstrap as ttk
 from customtkinter import *
 from PIL import Image, ImageTk
