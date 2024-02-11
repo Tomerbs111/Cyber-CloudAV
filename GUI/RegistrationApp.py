@@ -14,10 +14,10 @@ from tkvideo import tkvideo
 
 
 class RegistrationApp(ttk.Frame):
-    def __init__(self, parent, switch_callback, client_communicator):
+    def __init__(self, parent, switch_frame, client_communicator):
         super().__init__(parent)
         self.parent_app = parent
-        self.switch_callback = switch_callback
+        self.switch_frame = switch_frame
         self.client_communicator = client_communicator
 
         self.register_frame = ttk.Frame(master=self)
@@ -290,7 +290,7 @@ class RegistrationApp(ttk.Frame):
                 self.ans_password.configure(text="Registration failed.", bootstyle="danger")
             elif self.server_ans == "<SUCCESS>":
                 self.l_confirm.configure(text="User Registered successfully", bootstyle="success")
-                self.after(1000, lambda: self.switch_callback(HomePage, self.client_communicator))
+                self.after(1000, lambda: self.switch_frame("HomePage", self.client_communicator))
 
     def l_when_submit(self):
         checksum = 0
@@ -325,4 +325,4 @@ class RegistrationApp(ttk.Frame):
                                             bootstyle="danger")
             else:
                 self.l_confirm.configure(text=f"Welcome back {self.server_ans}", bootstyle="success")
-                self.after(1000, lambda: self.switch_callback(HomePage, self.client_communicator))
+                self.after(1000, lambda: self.switch_frame("HomePage", self.client_communicator))
