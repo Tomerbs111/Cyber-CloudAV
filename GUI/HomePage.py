@@ -165,7 +165,7 @@ class FileFrame(ttk.Frame):
 
 class HomePage(ttk.Frame):
     """
-    Initialize the class with the parent, switch_callback, and client_communicator parameters.
+    Initialize the class with the parent, switch_frame, and client_communicator parameters.
     Initialize instance variables for data center, action, file list, file frames, file frame counter, and save path.
     Call setup functions for searchbar frame, data center frame, option frame, action frame, and file management frame.
     Start a new thread to notify and receive files.
