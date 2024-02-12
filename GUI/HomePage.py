@@ -164,6 +164,7 @@ class FileFrame(ttk.Frame):
 
 
 class HomePage(ttk.Frame):
+    customtkinter.set_appearance_mode("dark")
     def __init__(self, parent, switch_frame, client_communicator):
         super().__init__(parent)
         self.parent_app = parent
@@ -173,7 +174,7 @@ class HomePage(ttk.Frame):
         self.f_file_list = None
         self.file_frames = []
         self.file_frame_counter = 0
-        self.save_path = None
+        self.save_path = os.path.join(os.path.expanduser("~"), "Downloads")
         self.rename_button = None
 
         self.setup_file_actions_frame()
@@ -364,16 +365,13 @@ class HomePage(ttk.Frame):
         self.file_frame_counter = len(self.file_frames)
 
     def receive_checked_files(self):
-        if self.save_path is None:
-            self.get_save_path_dialog()
-        else:
-            select_file_frames = self.checked_file_frames()
-            select_file_names_lst = [file_frame.get_filename() for file_frame in select_file_frames]
+        select_file_frames = self.checked_file_frames()
+        select_file_names_lst = [file_frame.get_filename() for file_frame in select_file_frames]
 
-            receive_thread = threading.Thread(
-                target=self.client_communicator.receive_checked_files,
-                args=(select_file_names_lst, self.save_path))
-            receive_thread.start()
+        receive_thread = threading.Thread(
+            target=self.client_communicator.receive_checked_files,
+            args=(select_file_names_lst, self.save_path))
+        receive_thread.start()
 
     def rename_checked_file(self):
         try:
@@ -398,13 +396,3 @@ class HomePage(ttk.Frame):
                 file_frame.update_idletasks()
         except IndexError:
             pass
-
-    def get_save_path_dialog(self):
-        dialog = CTkInputDialog(text="Write the path you want to save your files on:",
-                                title="Get save path")
-        input_path = dialog.get_input()
-
-        if input_path:
-            self.save_path = os.path.normpath(input_path)
-        else:
-            self.save_path = os.path.join(os.path.expanduser("~"), "Downloads")

@@ -7,6 +7,7 @@ from database.UserFiles import UserFiles
 HOST = '0.0.0.0'
 PORT = 40301
 
+
 class Server:
     def __init__(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -230,7 +231,6 @@ class Server:
         user_files_manager.rename_file(old_name, new_name)
 
         print("File renamed successfully.")
-
 
     def handle_favorite_action(self, client_socket, user_files_manager):
         favorite_file_name = client_socket.recv(1024).decode('utf-8')
