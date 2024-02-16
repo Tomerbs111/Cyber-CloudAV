@@ -2,7 +2,7 @@ import sqlite3
 import hashlib
 
 
-class UserAuthentication:
+class AuthManager:
     def __init__(self, database_path='../database/User_info.db'):
         self.conn = sqlite3.connect(database_path)
         self.cur = self.conn.cursor()
