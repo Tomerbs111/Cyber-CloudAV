@@ -15,6 +15,10 @@ class Server:
         self.server_socket.listen(5)
         print(f"Server listening on {HOST}:{PORT}")
 
+        # Initialize UserAuthentication and UserFiles instances
+        self.auth = UserAuthentication()
+        self.user_files = None
+
     def start(self):
         try:
             while True:
@@ -54,6 +58,9 @@ class Server:
                     identifier = self.handle_login_info(client_socket, u_email, u_password)
 
                 if identifier and identifier != "<EXISTS>":
+                    # Initialize UserFiles instance for the current user
+                    self.user_files = UserFiles(identifier)
+
                     # Start a new thread to handle the client
                     client_handler = threading.Thread(
                         target=self.handle_requests,
