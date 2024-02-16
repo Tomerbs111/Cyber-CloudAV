@@ -268,7 +268,7 @@ class HomePage(ttk.Frame):
                 formatted_file_size = self.format_file_size(file_bytes)  # a func from Gui_CAV.py
                 self.add_file_frame(file_name, formatted_file_size, file_date, favorite)  # a func from Gui_CAV.py
 
-    def add_file(self):
+    def handle_add_file(self):
         try:
             filetypes = (
                 ('All files', '*.*'),

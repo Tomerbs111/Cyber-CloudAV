@@ -1,7 +1,7 @@
 import pickle
 import socket
 import threading
-from database.Authentication import UserAuthentication
+from database.AuthManager import AuthManager
 from database.UserFiles import UserFiles
 
 HOST = '0.0.0.0'
@@ -15,8 +15,8 @@ class Server:
         self.server_socket.listen(5)
         print(f"Server listening on {HOST}:{PORT}")
 
-        # Initialize UserAuthentication and UserFiles instances
-        self.auth = UserAuthentication()
+        # Initialize AuthManager and UserFiles instances
+        self.auth = AuthManager()
         self.user_files = None
 
     def start(self):
@@ -74,7 +74,7 @@ class Server:
             print(f"Error: {e}")
 
     def handle_register_info(self, client_socket, u_email, u_username, u_password):
-        auth = UserAuthentication()
+        auth = AuthManager()
         try:
             ans = auth.register(u_email, u_username, u_password)
             client_socket.send(ans.encode())
@@ -94,7 +94,7 @@ class Server:
             client_socket.send("Unexpected error during registration".encode())
 
     def handle_login_info(self, client_socket, u_email, u_password):
-        auth = UserAuthentication()
+        auth = AuthManager()
         try:
             auth_ans = auth.login(u_email, u_password)
             client_socket.send(auth_ans.encode())

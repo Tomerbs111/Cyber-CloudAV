@@ -1,9 +1,4 @@
 import threading
-from tkinter import filedialog as fd
-from datetime import datetime
-import customtkinter
-from ttkbootstrap.scrolled import ScrolledFrame
-import re
 import ttkbootstrap as ttk
 from customtkinter import *
 from PIL import Image, ImageTk
@@ -14,12 +9,12 @@ from GUI.HomePage import HomePage
 
 
 class Page(ttk.Frame):
-    def __init__(self, master, switch_frame, client_communicator, current_frame):
+    def __init__(self, master, switch_frame, communicator, current_frame):
         super().__init__(master)
         self.current_frame = None
         self.master = master
         self.switch_frame = switch_frame
-        self.client_communicator = client_communicator
+        self.communicator = communicator
         self.current_frame = current_frame
 
         self.f_data_center = None
@@ -74,7 +69,7 @@ class Page(ttk.Frame):
             text="Add",
             image=CTkImage(Image.open("../GUI/file_icons/add_file_plus_icon.png"), size=(30, 30)),
             compound='left',
-            command=self.add_file
+            command=self.handle_add_file
         ).pack(side='top', pady=20, anchor='w', padx=10)
 
         ttk.Separator(f_options, orient="horizontal").pack(side='top', fill='x', pady=5, padx=10)
@@ -132,26 +127,27 @@ class Page(ttk.Frame):
     def switch_to_groups(self):
         if self.current_frame.__class__.__name__ != "GroupsPage":
             print("Switching to groups page")
-            self.switch_frame("GroupsPage", self.client_communicator)
+            self.switch_frame("GroupsPage", self.communicator)
 
     def switch_to_home(self):
         if self.current_frame.__class__.__name__ != "HomePage":
             print("Switching to home page")
-            self.switch_frame("HomePage", self.client_communicator)
+            self.switch_frame("HomePage", self.communicator)
 
-    def add_file(self):
+    def handle_add_file(self):
         if self.current_frame.__class__.__name__:
-            self.current_frame.add_file()
+            self.current_frame.handle_add_file()
 
 
 class MyApp(ttk.Window):
-    def __init__(self, client_communicator):
+    def __init__(self, client_communicator, group_communicator):
         super().__init__(themename="darkly")
         self.geometry("1150x710")
         self.title("Cloud-AV")
 
         self.current_frame = None
         self.client_communicator = client_communicator
+        self.group_communicator = group_communicator
         self.page = Page(self, self.switch_frame, self.client_communicator, self.current_frame)
 
         self.switch_frame("RegistrationApp", self.client_communicator)
@@ -164,6 +160,18 @@ class MyApp(ttk.Window):
                 self.current_frame.pack_forget()
 
             new_frame.pack(fill="both", expand=True)
+            self.current_frame = new_frame
+
+        elif frame_class == "GroupsPage":
+            new_frame = GroupsPage(self.page.f_current_page, self.switch_frame, self.group_communicator)
+
+            if self.current_frame:
+                self.current_frame.pack_forget()
+
+            self.page.pack(fill="both", expand=True)
+            new_frame.pack(fill="both", expand=True)
+
+            self.page.current_frame = new_frame
             self.current_frame = new_frame
 
         else:
