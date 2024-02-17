@@ -128,15 +128,16 @@ class Page(ttk.Frame):
         if self.current_frame.__class__.__name__ != "GroupsPage":
             print("Switching to groups page")
             self.switch_frame("GroupsPage", self.communicator)
+        self.current_frame.group_communicator.join_group()
 
     def switch_to_home(self):
+        self.current_frame.group_communicator.leave_group()
         if self.current_frame.__class__.__name__ != "HomePage":
             print("Switching to home page")
             self.switch_frame("HomePage", self.communicator)
 
     def handle_add_file(self):
-        if self.current_frame.__class__.__name__:
-            self.current_frame.handle_add_file()
+        self.current_frame.handle_add_file()
 
 
 class MyApp(ttk.Window):
@@ -174,8 +175,8 @@ class MyApp(ttk.Window):
             self.page.current_frame = new_frame
             self.current_frame = new_frame
 
-        else:
-            new_frame = globals()[frame_class](self.page.f_current_page, self.switch_frame, *args)
+        elif frame_class == "HomePage":
+            new_frame = HomePage(self.page.f_current_page, self.switch_frame, self.client_communicator)
 
             if self.current_frame:
                 self.current_frame.pack_forget()

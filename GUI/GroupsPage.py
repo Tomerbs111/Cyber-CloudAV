@@ -97,18 +97,20 @@ class GroupFileFrame(ttk.Frame):
 
 
 class GroupsPage(ttk.Frame):
-    def __init__(self, parent, switch_frame, client_communicator):
+    def __init__(self, parent, switch_frame, group_communicator):
         super().__init__(parent)
         self.parent_app = parent
         self.switch_frame = switch_frame
-        self.client_communicator = client_communicator
+        self.group_communicator = group_communicator
 
+        # setting up variables
         self.rename_button = None
         self.f_file_list = None
         self.file_frames = []
         self.file_frame_counter = 0
         self.save_path = os.path.join(os.path.expanduser("~"), "Downloads")
 
+        # setting up the frame
         self.setup_file_actions_frame()
 
         self.add_file_frame("test", "test", "test", "test")
@@ -176,8 +178,51 @@ class GroupsPage(ttk.Frame):
     def handle_receive_presaved_files(self):
         pass
 
-    def handle_send_file_group(self):
-        pass
+    def handle_add_file(self):
+        filetypes = (
+            ('All files', '*.*'),
+            ('text files', '*.txt'),
+            ('All files', '*.*')
+        )
+
+        file_name = fd.askopenfilename(
+            title='Select a file',
+            initialdir='/',
+            filetypes=filetypes)
+
+        file_bytes = os.path.getsize(file_name)
+        file_date = date.today()
+
+        short_filename, formatted_file_size, short_file_date = \
+            self.prepare_for_display(file_name, file_bytes, file_date)
+
+        send_file_thread = threading.Thread(
+            target=self.group_communicator.send_file,
+            args=(file_name, short_filename, short_file_date, file_bytes)
+        )
+        send_file_thread.start()
+
+        self.add_file_frame(short_filename, formatted_file_size, short_file_date, group_file_owner="self")
+
+    @staticmethod
+    def format_file_size(file_size_bytes):
+        if file_size_bytes < 1024:
+            return f"{file_size_bytes} bytes"
+        elif file_size_bytes < 1024 ** 2:
+            return f"{file_size_bytes / 1024:.2f} KB"
+        elif file_size_bytes < 1024 ** 3:
+            return f"{file_size_bytes / (1024 ** 2):.2f} MB"
+        else:
+            return f"{file_size_bytes / (1024 ** 3):.2f} GB"
+
+    def prepare_for_display(self, file_name, file_bytes, file_uploadate: date):
+        short_filename = os.path.basename(file_name)
+        formatted_file_size = self.format_file_size(file_bytes)
+
+        short_file_date = file_uploadate.strftime('%B %d, %Y')
+
+        return short_filename, formatted_file_size, short_file_date
+
 
     def handle_download_file_group(self):
         pass

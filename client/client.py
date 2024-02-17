@@ -1,6 +1,8 @@
 import socket
 import os
 import pickle
+import threading
+
 from GUI.MyApp import MyApp
 
 
@@ -85,25 +87,22 @@ class ClientCommunication:
         """
         # Send the "S" flag to indicate file transmission
         self.client_socket.send(b'<SEND>')
+        print('File sent')
         # Send the file metadata and content
         self.client_socket.send(pickle.dumps([short_filename, file_bytes, short_file_date]))
 
         # Receive acknowledgment from the client
-        serv_ans = self.client_socket.recv(72).decode()
+        with open(file_name, 'rb') as file:
+            while True:
+                # Read and send the file in chunks
+                data = file.read(1024)
+                if not data:
+                    break
+                self.client_socket.send(data)
 
-        # Check if the client is ready to receive the file
-        if serv_ans == "<GOT_PROP>":
-            with open(file_name, 'rb') as file:
-                while True:
-                    # Read and send the file in chunks
-                    data = file.read(1024)
-                    if not data:
-                        break
-                    self.client_socket.send(data)
-
-                # Signal the end of data transmission
-                self.client_socket.send(b"<END_OF_DATA>")
-                print(f"File '{file_name}' sent successfully")
+            # Signal the end of data transmission
+            self.client_socket.send(b"<END_OF_DATA>")
+            print(f"File '{file_name}' sent successfully")
 
     def receive_checked_files(self, select_file_names_lst, save_path):
         """
@@ -200,22 +199,50 @@ class GroupCommunication:
 
     def __init__(self, client_socket):
         self.client_socket = client_socket
+        self.receive_broadcasted_files_thread = threading.Thread(target=self.receive_broadcasted_files,
+                                                                 args=(self.client_socket,))
+        self.stop_receive_thread = threading.Event()  # Flag to stop the thread
 
     def join_group(self):
+        self.stop_receive_thread.set()  # Set the flag to stop the thread
         self.client_socket.send(b'<JOIN_GROUP>')
         ans = self.client_socket.recv(64)
         if ans == b'<JOINED>':
             print("joined")
+            self.receive_broadcasted_files_thread.start()
 
     def leave_group(self):
+        self.stop_receive_thread.set()
         self.client_socket.send(b'<LEAVE_GROUP>')
         ans = self.client_socket.recv(48)
         if ans == b'<LEFT>':
             print("left")
 
+    def receive_broadcasted_files(self, client_socket):
+        while True:
+            pickled_data = client_socket.recv(1024)
+            if pickled_data:
+                print("Receiving file...")
+                print(pickled_data)
+
+    def send_file(self, file_name, short_filename, short_file_date, file_bytes):
+        self.client_socket.send(b'<SEND>')
+
+        self.client_socket.send(pickle.dumps([short_filename, file_bytes, short_file_date]))
+
+        with open(file_name, 'rb') as file:
+            while True:
+                # Read and send the file in chunks
+                data = file.read(1024)
+                if not data:
+                    break
+                self.client_socket.send(data)
+
+            # Signal the end of data transmission
+            self.client_socket.send(b"<END_OF_DATA>")
+            print(f"File '{file_name}' sent successfully")
+
 # ------------Client setup------------
-
-
 HOST = '127.0.0.1'
 PORT = 40301
 

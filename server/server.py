@@ -2,7 +2,10 @@ import pickle
 import socket
 import threading
 from database.AuthManager import AuthManager
+from database.GroupFiles import GroupFiles
 from database.UserFiles import UserFiles
+from GroupUser import GroupUser
+from queue import Queue
 
 HOST = '0.0.0.0'
 PORT = 40301
@@ -15,9 +18,15 @@ class Server:
         self.server_socket.listen(5)
         print(f"Server listening on {HOST}:{PORT}")
 
-        # Initialize AuthManager and UserFiles instances
-        self.auth = AuthManager()
-        self.user_files = None
+        # Initialize clients list
+        self.clients_list = []
+
+        # Message queue for broadcasting
+        self.file_queue = Queue()
+
+        # Create a thread for broadcasting messages
+        self.broadcast_thread = threading.Thread(target=self.broadcast_files)
+        self.broadcast_thread.start()
 
     def start(self):
         try:
@@ -58,9 +67,6 @@ class Server:
                     identifier = self.handle_login_info(client_socket, u_email, u_password)
 
                 if identifier and identifier != "<EXISTS>":
-                    # Initialize UserFiles instance for the current user
-                    self.user_files = UserFiles(identifier)
-
                     # Start a new thread to handle the client
                     client_handler = threading.Thread(
                         target=self.handle_requests,
@@ -72,6 +78,20 @@ class Server:
 
         except (socket.error, IOError) as e:
             print(f"Error: {e}")
+
+    def broadcast_files(self):
+        while True:
+            print("Broadcasting files...")
+            # Get a message from the queue
+            pickled_file = self.file_queue.get()
+
+            # Unpack the message to get the client socket and the file data
+            sender_socket, file_data = pickled_file
+
+            # Broadcast the message to all connected clients except the sender
+            for g_users in self.clients_list:
+                if g_users.user_socket != sender_socket:
+                    g_users.user_socket.send(b'<BROADCAST>' + file_data)
 
     def handle_register_info(self, client_socket, u_email, u_username, u_password):
         auth = AuthManager()
@@ -117,6 +137,7 @@ class Server:
     def handle_requests(self, client_socket, identifier):
         try:
             user_files_manager = UserFiles(identifier)
+
             while True:
                 action = client_socket.recv(1024).decode()
 
@@ -128,6 +149,7 @@ class Server:
                     break
 
                 elif action == "<SEND>":
+                    print("hello")
                     self.handle_save_file_action(client_socket, user_files_manager)
 
                 elif action == "<RECV>":
@@ -145,11 +167,42 @@ class Server:
                 elif action == "<UNFAVORITE>":
                     self.handle_unfavorite_action(client_socket, user_files_manager)
 
+                elif action == "<JOIN_GROUP>":
+                    self.handle_join_group_action(client_socket, identifier)
+                    break
+
+
         except (socket.error, IOError) as e:
             print(f"Error: {e}")
 
-        finally:
-            client_socket.close()
+    def handle_group_requests(self, client_socket: socket, identifier):
+        group_manager = GroupFiles(identifier)
+        group_name = self.get_group_name(client_socket)
+
+        while True:
+            action = client_socket.recv(1024).decode()
+
+            if action == "<SEND>":
+                filename = self.handle_save_file_action(client_socket, group_manager)
+                print("got filename")
+                file_info = self.get_file_info(group_manager, group_name, filename)
+                print(f"file info: {file_info}")
+                # Enqueue the file info for broadcasting
+                self.file_queue.put((client_socket, pickle.dumps(file_info)))
+
+            elif action == "<LEAVE_GROUP>":
+                self.handle_leave_group_action(client_socket, identifier)
+                break
+
+    def get_file_info(self, group_manager, group_name, filename):
+        return group_manager.get_file_info(group_name, filename)
+
+    def get_group_name(self, client_socket):
+        for index, group_user in enumerate(self.clients_list):
+            if group_user.user_socket == client_socket:
+                return group_user.group_name
+
+        return "group1"  # return a default group name
 
     def handle_narf_action(self, client_socket, user_files_manager):
         saved_file_prop_lst = user_files_manager.get_all_data()
@@ -163,14 +216,12 @@ class Server:
     def handle_sign_out_action(self, identifier):
         print(f"User {identifier} has signed out.")
 
-    def handle_save_file_action(self, client_socket, user_files_manager):
+    def handle_save_file_action(self, client_socket, db_manager):
         file_prop_lst = pickle.loads(client_socket.recv(1024))
 
         file_name = file_prop_lst[0]
         file_size = file_prop_lst[1]
         file_date = file_prop_lst[2]
-        client_socket.send(b"<GOT_PROP>")
-
         # server got all the properties
         done_sending = False
         all_data = b""
@@ -182,7 +233,16 @@ class Server:
             else:
                 all_data += data
 
-        user_files_manager.insert_file(file_name, file_size, file_date, all_data)
+        if isinstance(db_manager, GroupFiles):
+            # If db_manager is a GroupFiles object, get the group name from the GroupUser
+            group_name = self.get_group_name(client_socket)
+
+            db_manager.insert_file(file_name, file_size, file_date, group_name, all_data)
+            return file_name
+
+        elif isinstance(db_manager, UserFiles):
+            db_manager.insert_file(file_name, file_size, file_date, all_data)
+
         print(f"File '{file_name}' received and saved in the database")
 
     def handle_read_files_action(self, client_socket, user_files_manager):
@@ -249,6 +309,34 @@ class Server:
         unfavorite_file_name = client_socket.recv(1024).decode('utf-8')
         user_files_manager.set_unfavorite_status(unfavorite_file_name)
         print("File unfavorited successfully.")
+
+    def handle_join_group_action(self, client_socket, identifier):
+        user_email = AuthManager().get_email(identifier)
+        self.clients_list.append(GroupUser(client_socket, user_email, "group1"))
+
+        client_socket.send(b'<JOINED>')
+        print("joined group")
+
+
+        group_handler = threading.Thread(
+            target=self.handle_group_requests,
+            args=(client_socket, identifier)
+
+        )
+        group_handler.start()
+
+    def handle_leave_group_action(self, client_socket, identifier):
+        client_socket.send(b'<LEFT>')
+        for group_user in self.clients_list:
+            if group_user.user_socket == client_socket:
+                self.clients_list.remove(group_user)
+                break
+        client_handler = threading.Thread(
+            target=self.handle_requests,
+            args=(client_socket, identifier)
+        )
+
+        client_handler.start()
 
 
 if __name__ == "__main__":
