@@ -91,7 +91,7 @@ class Server:
             # Broadcast the message to all connected clients except the sender
             for g_users in self.clients_list:
                 if g_users.user_socket != sender_socket:
-                    g_users.user_socket.send(b'<BROADCAST>' + file_data)
+                    g_users.user_socket.send(file_data)
 
     def handle_register_info(self, client_socket, u_email, u_username, u_password):
         auth = AuthManager()
