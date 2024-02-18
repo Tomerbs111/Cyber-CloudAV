@@ -1,3 +1,4 @@
+import pickle
 import threading
 from tkinter import filedialog as fd
 from datetime import datetime
@@ -204,8 +205,8 @@ class GroupsPage(ttk.Frame):
 
         self.add_file_frame(short_filename, formatted_file_size, short_file_date, group_file_owner="self")
 
-    @staticmethod
-    def format_file_size(file_size_bytes):
+
+    def format_file_size(self, file_size_bytes):
         if file_size_bytes < 1024:
             return f"{file_size_bytes} bytes"
         elif file_size_bytes < 1024 ** 2:
@@ -223,7 +224,6 @@ class GroupsPage(ttk.Frame):
 
         return short_filename, formatted_file_size, short_file_date
 
-
     def handle_download_file_group(self):
         pass
 
@@ -236,8 +236,22 @@ class GroupsPage(ttk.Frame):
     def handle_group_leave(self):
         pass
 
-    def handle_group_join(self):
-        pass
+    def set_on_broadcast_callback(self, on_broadcast_callback):
+        self.group_communicator.on_broadcast_callback = self.on_broadcast_callback
 
-    def handle_leave_group(self):
-        self.group_communicator.leave_group()
+    def on_broadcast_callback(self, pickled_data):
+        try:
+            data = pickle.loads(pickled_data)
+            protocol_flag = data[1]
+            received_data = data[0]
+
+            print(protocol_flag)
+
+            if protocol_flag == "<SEND>":
+                for item in received_data:
+                    owner, name, size, date, group_name = item
+                    self.add_file_frame(name, self.format_file_size(size), date, owner)
+
+        except pickle.UnpicklingError:
+            return
+

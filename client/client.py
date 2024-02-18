@@ -196,8 +196,10 @@ class ClientCommunication:
 
 
 class GroupCommunication:
-    def __init__(self, client_socket):
+    def __init__(self, client_socket, on_broadcast_callback):
         self.client_socket = client_socket
+        self.on_broadcast_callback = on_broadcast_callback  # Define the callback function
+
         self.receive_thread = None  # Thread for receiving broadcasted files
         self.running = False  # Flag to control the thread
 
@@ -210,7 +212,8 @@ class GroupCommunication:
             print("joined")
             # Start the thread when the client joins the group
             self.running = True
-            self.receive_thread = threading.Thread(target=self.receive_broadcasted_files)
+            self.receive_thread = threading.Thread(target=self.receive_broadcasted_files,
+                                                   args=(self.on_broadcast_callback,))
             self.receive_thread.start()
 
     def leave_group(self):
@@ -219,14 +222,16 @@ class GroupCommunication:
         if self.receive_thread:
             self.receive_thread.join()
 
-    def receive_broadcasted_files(self):
+    def receive_broadcasted_files(self, on_broadcast_callback):
         while self.running:
-            pickled_data = self.client_socket.recv(1024)
-            if pickled_data == b'<LEFT>':
+            data = self.client_socket.recv(1024)
+
+            if data == b'<LEFT>':
                 self.running = False
                 break
 
-            print(f"Received broadcasted file: {pickled_data}")
+            # Call the callback function in GroupsPage
+            on_broadcast_callback(data)
 
 
     def send_file(self, file_name, short_filename, short_file_date, file_bytes):
@@ -246,6 +251,15 @@ class GroupCommunication:
             self.client_socket.send(b"<END_OF_DATA>")
             print(f"File '{file_name}' sent successfully")
 
+    def delete_checked_files(self, select_file_names_lst):
+        self.client_socket.send(b'<DELETE>')
+
+        # Convert the list to a pickled string
+        pickled_data = pickle.dumps(select_file_names_lst)
+
+        # Send the length of the pickled data
+        self.client_socket.send(pickled_data)
+
 # ------------Client setup------------
 HOST = '127.0.0.1'
 PORT = 40301
@@ -256,7 +270,7 @@ class MainClient:
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.connect((HOST, PORT))
         self.client_communicator = ClientCommunication(self.client_socket)
-        self.group_communicator = GroupCommunication(self.client_socket)
+        self.group_communicator = GroupCommunication(self.client_socket, None)
 
     def run(self):
         try:

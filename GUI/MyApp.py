@@ -175,6 +175,10 @@ class MyApp(ttk.Window):
             self.page.current_frame = new_frame
             self.current_frame = new_frame
 
+
+            new_frame.set_on_broadcast_callback(self.group_communicator.on_broadcast_callback)
+
+
         elif frame_class == "HomePage":
             new_frame = HomePage(self.page.f_current_page, self.switch_frame, self.client_communicator)
 

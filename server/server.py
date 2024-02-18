@@ -176,19 +176,14 @@ class Server:
             print(f"Error: {e}")
 
     def handle_group_requests(self, client_socket: socket, identifier):
-        group_manager = GroupFiles(identifier)
+        group_manager = GroupFiles(AuthManager().get_email(identifier))
         group_name = self.get_group_name(client_socket)
 
         while True:
             action = client_socket.recv(1024).decode()
 
             if action == "<SEND>":
-                filename = self.handle_save_file_action(client_socket, group_manager)
-                print("got filename")
-                file_info = self.get_file_info(group_manager, group_name, filename)
-                print(f"file info: {file_info}")
-                # Enqueue the file info for broadcasting
-                self.file_queue.put((client_socket, pickle.dumps(file_info)))
+                self.handle_save_file_action(client_socket, group_manager)
 
             elif action == "<LEAVE_GROUP>":
                 self.handle_leave_group_action(client_socket, identifier)
@@ -234,11 +229,14 @@ class Server:
                 all_data += data
 
         if isinstance(db_manager, GroupFiles):
-            # If db_manager is a GroupFiles object, get the group name from the GroupUser
             group_name = self.get_group_name(client_socket)
-
             db_manager.insert_file(file_name, file_size, file_date, group_name, all_data)
-            return file_name
+
+            file_info = self.get_file_info(db_manager, group_name, file_name)
+            queued_info = pickle.dumps([file_info, "<SEND>"])
+
+            self.file_queue.put((client_socket, queued_info))
+
 
         elif isinstance(db_manager, UserFiles):
             db_manager.insert_file(file_name, file_size, file_date, all_data)
@@ -253,7 +251,7 @@ class Server:
 
         file_data_name_dict = {}
         for individual_file in select_file_names_lst:
-            file_data = user_files_manager.get_file_data(individual_file)[0]
+            file_data = user_files_manager.get_file_info(individual_file)[0]
             file_data_name_dict[individual_file] = file_data
 
         # Convert the dictionary to a pickled string
