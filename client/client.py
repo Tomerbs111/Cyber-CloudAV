@@ -196,34 +196,38 @@ class ClientCommunication:
 
 
 class GroupCommunication:
-
     def __init__(self, client_socket):
         self.client_socket = client_socket
-        self.receive_broadcasted_files_thread = threading.Thread(target=self.receive_broadcasted_files,
-                                                                 args=(self.client_socket,))
-        self.stop_receive_thread = threading.Event()  # Flag to stop the thread
+        self.receive_thread = None  # Thread for receiving broadcasted files
+        self.running = False  # Flag to control the thread
+
+    # ... (your existing methods)
 
     def join_group(self):
-        self.stop_receive_thread.set()  # Set the flag to stop the thread
         self.client_socket.send(b'<JOIN_GROUP>')
         ans = self.client_socket.recv(64)
         if ans == b'<JOINED>':
             print("joined")
-            self.receive_broadcasted_files_thread.start()
+            # Start the thread when the client joins the group
+            self.running = True
+            self.receive_thread = threading.Thread(target=self.receive_broadcasted_files)
+            self.receive_thread.start()
 
     def leave_group(self):
-        self.stop_receive_thread.set()
         self.client_socket.send(b'<LEAVE_GROUP>')
-        ans = self.client_socket.recv(48)
-        if ans == b'<LEFT>':
-            print("left")
+        self.running = False
+        if self.receive_thread:
+            self.receive_thread.join()
 
-    def receive_broadcasted_files(self, client_socket):
-        while True:
-            pickled_data = client_socket.recv(1024)
-            if pickled_data:
-                print("Receiving file...")
-                print(pickled_data)
+    def receive_broadcasted_files(self):
+        while self.running:
+            pickled_data = self.client_socket.recv(1024)
+            if pickled_data == b'<LEFT>':
+                self.running = False
+                break
+
+            print(f"Received broadcasted file: {pickled_data}")
+
 
     def send_file(self, file_name, short_filename, short_file_date, file_bytes):
         self.client_socket.send(b'<SEND>')

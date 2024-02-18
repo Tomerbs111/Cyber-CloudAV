@@ -128,16 +128,16 @@ class Page(ttk.Frame):
         if self.current_frame.__class__.__name__ != "GroupsPage":
             print("Switching to groups page")
             self.switch_frame("GroupsPage", self.communicator)
-        self.current_frame.group_communicator.join_group()
+        threading.Thread(target=self.current_frame.group_communicator.join_group).start()
 
     def switch_to_home(self):
-        self.current_frame.group_communicator.leave_group()
+        threading.Thread(target=self.current_frame.group_communicator.leave_group).start()
         if self.current_frame.__class__.__name__ != "HomePage":
             print("Switching to home page")
             self.switch_frame("HomePage", self.communicator)
 
     def handle_add_file(self):
-        self.current_frame.handle_add_file()
+        threading.Thread(target=self.current_frame.handle_add_file).start()
 
 
 class MyApp(ttk.Window):

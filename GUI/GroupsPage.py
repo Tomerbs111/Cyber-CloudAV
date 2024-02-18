@@ -238,3 +238,6 @@ class GroupsPage(ttk.Frame):
 
     def handle_group_join(self):
         pass
+
+    def handle_leave_group(self):
+        self.group_communicator.leave_group()

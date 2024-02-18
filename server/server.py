@@ -331,6 +331,7 @@ class Server:
             if group_user.user_socket == client_socket:
                 self.clients_list.remove(group_user)
                 break
+        print("left group")
         client_handler = threading.Thread(
             target=self.handle_requests,
             args=(client_socket, identifier)
