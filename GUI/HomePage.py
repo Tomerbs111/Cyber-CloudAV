@@ -356,7 +356,6 @@ class HomePage(ttk.Frame):
     def delete_checked_file(self):
         frames_to_delete = self.checked_file_frames()
         names_to_delete_lst = [file_frame.get_filename() for file_frame in frames_to_delete]
-        print(names_to_delete_lst)
 
         self.client_communicator.delete_checked_files(names_to_delete_lst)
         for file_frame in frames_to_delete:

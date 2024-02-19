@@ -40,6 +40,10 @@ class GroupFiles:
         UPDATE GroupsFiles SET Name = ? WHERE GroupName = ? AND Owner = ? AND Name = ?;
     '''
 
+    GET_ALL_FILES_FROM_GROUP_QUERY = '''
+        SELECT Owner, Name, Size, Date, GroupName FROM GroupsFiles WHERE GroupName = ?;
+    '''
+
     def __init__(self, userid: str, database_path='../database/User_info.db'):
         self.conn = sqlite3.connect(database_path)
         self.cur = self.conn.cursor()
@@ -70,3 +74,6 @@ class GroupFiles:
 
     def get_file_data(self, group_name: str, name: str):
         return self._execute_query(self.GET_FILE_DATA_QUERY, (group_name, self.owner_id, name))
+
+    def get_all_files_from_group(self, group_name: str):
+        return self._execute_query(self.GET_ALL_FILES_FROM_GROUP_QUERY, (group_name,))

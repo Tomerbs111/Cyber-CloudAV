@@ -1,6 +1,7 @@
 import socket
 import os
 import pickle
+import struct
 import threading
 
 from GUI.MyApp import MyApp
@@ -105,34 +106,38 @@ class ClientCommunication:
             print(f"File '{file_name}' sent successfully")
 
     def receive_checked_files(self, select_file_names_lst, save_path):
-        """
-        Receives a list of checked files, a list of selected file names, and a save path.
-        It sends the files to the client socket, receives a dictionary from the server,
-        and saves the files to the specified save path.
-        """
-        self.client_socket.send(b'<RECV>')
+        try:
+            self.client_socket.send(b'<RECV>')
 
-        # Convert the list to a pickled string
-        pickled_data = pickle.dumps(select_file_names_lst)
+            # Convert the list to a pickled string
+            pickled_data = pickle.dumps(select_file_names_lst)
 
-        # Send the length of the pickled data
-        data_len = len(pickled_data)
-        self.client_socket.send(str(data_len).encode())
+            # Send the length of the pickled data as a fixed-size binary value
+            data_len = struct.pack("!I", len(pickled_data))
+            self.client_socket.send(data_len)
 
-        # Send the pickled data
-        self.client_socket.send(pickled_data)
+            # Send the pickled data
+            self.client_socket.sendall(pickled_data)
 
-        # Now the client receives the dictionary from the server
-        data_len = int(self.client_socket.recv(1024).decode())
-        pickled_fdn_dict = self.client_socket.recv(data_len)
+            # Receive the length of the pickled dictionary data
+            data_len = struct.unpack("!I", self.client_socket.recv(4))[0]
 
-        # Load the dictionary
-        file_data_name_dict = pickle.loads(pickled_fdn_dict)
-        for indiv_filename, indiv_filebytes in file_data_name_dict.items():
-            file_path = os.path.join(save_path, indiv_filename)
-            with open(file_path, "wb") as file:
-                file.write(indiv_filebytes)
-                print(f"File '{indiv_filename}' received successfully.")
+            # Receive the pickled dictionary data
+            pickled_fdn_dict = self.client_socket.recv(data_len)
+
+            # Load the dictionary
+            file_data_name_dict = pickle.loads(pickled_fdn_dict)
+
+            for indiv_filename, indiv_filebytes in file_data_name_dict.items():
+                file_path = os.path.join(save_path, indiv_filename)
+                with open(file_path, "wb") as file:
+                    file.write(indiv_filebytes)
+                    print(f"File '{indiv_filename}' received successfully.")
+
+        except Exception as e:
+            print(f"Error in receive_checked_files: {e}")
+
+    import struct
 
     def notify_and_receive_files(self):
         """
@@ -141,8 +146,11 @@ class ClientCommunication:
         """
         self.client_socket.send(b'<NARF>')
 
-        # Receive the length of the pickled data
-        data_len = int(self.client_socket.recv(1024).decode())
+        # Receive the packed length (assuming it's a 4-byte integer)
+        len_data = self.client_socket.recv(4)
+
+        # Unpack the length using struct
+        data_len = struct.unpack("!I", len_data)[0]
 
         # Receive the pickled data
         pickled_data = self.client_socket.recv(data_len)
@@ -210,6 +218,9 @@ class GroupCommunication:
         ans = self.client_socket.recv(64)
         if ans == b'<JOINED>':
             print("joined")
+            saved_file_prop_lst = self.notify_and_receive_files()
+            self.on_broadcast_callback(pickle.dumps([saved_file_prop_lst, "<NARF>"]))
+            # Create a new thread to receive broadcasted files
             # Start the thread when the client joins the group
             self.running = True
             self.receive_thread = threading.Thread(target=self.receive_broadcasted_files,
@@ -225,14 +236,13 @@ class GroupCommunication:
     def receive_broadcasted_files(self, on_broadcast_callback):
         while self.running:
             data = self.client_socket.recv(1024)
-
+            print(data)
             if data == b'<LEFT>':
                 self.running = False
                 break
 
             # Call the callback function in GroupsPage
             on_broadcast_callback(data)
-
 
     def send_file(self, file_name, short_filename, short_file_date, file_bytes):
         self.client_socket.send(b'<SEND>')
@@ -259,6 +269,43 @@ class GroupCommunication:
 
         # Send the length of the pickled data
         self.client_socket.send(pickled_data)
+
+    def rename_files(self, rename_data):
+        """
+        Receives a list of checked files, a list of tuples containing old names and new names, and renames the files.
+        """
+        self.client_socket.send(b'<RENAME>')
+        print("sent")
+        # Convert the list of tuples to a pickled string
+        pickled_data = pickle.dumps(rename_data)
+        self.client_socket.send(len(pickled_data).to_bytes(4, byteorder='big'))
+        self.client_socket.send(pickled_data)
+
+        print("Files renamed successfully.")
+
+    import struct
+
+    def notify_and_receive_files(self):
+        """
+        Sends a '<NARF>' message through the client socket, receives the length of the pickled data,
+        receives the pickled data, loads the pickled data, and returns the saved file properties list.
+        """
+        self.client_socket.send(b'<NARF>')
+
+        # Receive the packed length (assuming it's a 4-byte integer)
+        len_data = self.client_socket.recv(4)
+
+        # Unpack the length using struct
+        data_len = struct.unpack("!I", len_data)[0]
+
+        # Receive the pickled data
+        pickled_data = self.client_socket.recv(data_len)
+
+        # Load the pickled data
+        saved_file_prop_lst = pickle.loads(pickled_data)
+
+        return saved_file_prop_lst
+
 
 # ------------Client setup------------
 HOST = '127.0.0.1'

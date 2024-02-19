@@ -55,10 +55,33 @@ class GroupFileFrame(ttk.Frame):
         icon_label.pack(side='left', padx=(0, 5), pady=5)
 
         text_size = 12
-        self.lu_filename = self.create_label(self._file_name).pack(side='left', padx=(0, 5), pady=5, anchor='w')
-        self.lu_size = self.create_label(self.file_size).pack(side='right', padx=(0, 27), pady=5, anchor='e')
-        self.lu_date_mod = self.create_label(self.file_date).pack(side='right', padx=(0, 65), pady=5, anchor='e')
-        self.lu_owner = self.create_label(self.file_owner).pack(side='right', padx=(0, 65), pady=5, anchor='e')
+        self.lu_filename = ttk.Label(
+            master=self,
+            text=self._file_name,
+            font=("Arial", text_size)
+        )
+        self.lu_filename.pack(side='left', padx=(0, 5), pady=5, anchor='w')
+
+        self.lu_size = ttk.Label(
+            master=self,
+            text=self.file_size,
+            font=("Arial", 12)
+        )
+        self.lu_size.pack(side='right', padx=(0, 27), pady=5, anchor='e')
+
+        self.lu_date_mod = ttk.Label(
+            master=self,
+            text=self.file_date,
+            font=("Arial", 12)
+        )
+        self.lu_date_mod.pack(side='right', padx=(0, 65), pady=5, anchor='e')
+
+        self.lu_owner = ttk.Label(
+            master=self,
+            text=self.file_owner,
+            font=("Arial", 12)
+        )
+        self.lu_owner.pack(side='right', padx=(0, 65), pady=5, anchor='e')
 
     @property
     def filename(self):
@@ -80,15 +103,18 @@ class GroupFileFrame(ttk.Frame):
         tk_icon_image = ImageTk.PhotoImage(icon_image)
         return tk_icon_image
 
+    def get_filename(self):
+        return self._file_name
+
     def create_label(self, text):
         return ttk.Label(master=self, text=text, font=("Arial", 12))
 
     def get_checkvar(self) -> bool:
         return self.check_var.get() == "on"
 
-    def set_filename(self, fname):
-        self._file_name = fname
-        self.lu_filename.configure(text=fname)
+    def set_filename(self, value):
+        self._file_name = value
+        self.lu_filename.configure(text=self._file_name)
 
     def uncheck(self):
         self.check_var.set("off")
@@ -107,14 +133,12 @@ class GroupsPage(ttk.Frame):
         # setting up variables
         self.rename_button = None
         self.f_file_list = None
-        self.file_frames = []
+        self.group_file_frames = []
         self.file_frame_counter = 0
         self.save_path = os.path.join(os.path.expanduser("~"), "Downloads")
 
         # setting up the frame
         self.setup_file_actions_frame()
-
-        self.add_file_frame("test", "test", "test", "test")
 
     def setup_file_actions_frame(self):
         f_action = ttk.Frame(master=self)
@@ -173,11 +197,15 @@ class GroupsPage(ttk.Frame):
                                     group_file_owner)
 
         file_frame.pack(expand=True, fill='x', side='top')
-        self.file_frames.append(file_frame)
+        self.group_file_frames.append(file_frame)
         self.file_frame_counter += 1
 
-    def handle_receive_presaved_files(self):
-        pass
+    def handle_receive_presaved_files(self, received_data):
+        for individual_file in received_data:
+            owner, name, size, date, group_name = individual_file
+
+            formatted_file_size = self.format_file_size(size)  # a func from Gui_CAV.py
+            self.add_file_frame(name, formatted_file_size, date, owner)  # a func from Gui_CAV.py
 
     def handle_add_file(self):
         filetypes = (
@@ -205,7 +233,6 @@ class GroupsPage(ttk.Frame):
 
         self.add_file_frame(short_filename, formatted_file_size, short_file_date, group_file_owner="self")
 
-
     def format_file_size(self, file_size_bytes):
         if file_size_bytes < 1024:
             return f"{file_size_bytes} bytes"
@@ -224,17 +251,70 @@ class GroupsPage(ttk.Frame):
 
         return short_filename, formatted_file_size, short_file_date
 
+    def checked_file_frames(self):
+        checked_file_frames_list = []
+        for file_frame in self.group_file_frames:
+            if file_frame.get_checkvar():
+                checked_file_frames_list.append(file_frame)
+                file_frame.uncheck()
+
+        return checked_file_frames_list
+
     def handle_download_file_group(self):
         pass
 
     def handle_delete_file_group(self):
-        pass
+        frames_to_delete = self.checked_file_frames()
+        names_to_delete_lst = [file_frame.get_filename() for file_frame in frames_to_delete]
+
+        self.delete_thread = threading.Thread(
+            target=self.group_communicator.delete_checked_files,
+            args=(names_to_delete_lst,)
+        ).start()
+        for file_frame in frames_to_delete:
+            file_frame.kill_frame()
+
+        self.file_frame_counter = len(self.group_file_frames)
+
+    def get_files_to_delete(self, names_to_delete_lst):
+        for file_frame in self.group_file_frames:
+            filename = file_frame.get_filename()
+            if filename in names_to_delete_lst:
+                file_frame.kill_frame()
+
+        self.file_frame_counter = len(self.group_file_frames)
 
     def handle_rename_file_group(self):
-        pass
+        try:
+            file_frame = self.checked_file_frames()[0]
+            old_name = file_frame.get_filename()
 
-    def handle_group_leave(self):
-        pass
+            file_format = os.path.splitext(old_name)[1]
+
+            new_name_dialog = CTkInputDialog(text=f"Replace {old_name} with:",
+                                             title="Rename file")
+            new_name = new_name_dialog.get_input()
+
+            if new_name:
+                new_name_with_format = f"{new_name}{file_format}"
+
+                rename_thread = threading.Thread(
+                    target=self.group_communicator.rename_files,
+                    args=((old_name, new_name_with_format),))
+                rename_thread.start()
+
+                file_frame.set_filename(new_name_with_format)
+                file_frame.update_idletasks()
+        except IndexError:
+            pass
+
+    def get_file_to_rename(self, received_data):
+        old_name, new_name = received_data
+        for file_frame in self.group_file_frames:
+            filename = file_frame.get_filename()
+            if filename == old_name:
+                file_frame.set_filename(new_name)
+                file_frame.update_idletasks()
 
     def set_on_broadcast_callback(self, on_broadcast_callback):
         self.group_communicator.on_broadcast_callback = self.on_broadcast_callback
@@ -245,13 +325,19 @@ class GroupsPage(ttk.Frame):
             protocol_flag = data[1]
             received_data = data[0]
 
-            print(protocol_flag)
-
             if protocol_flag == "<SEND>":
                 for item in received_data:
                     owner, name, size, date, group_name = item
                     self.add_file_frame(name, self.format_file_size(size), date, owner)
 
+            elif protocol_flag == "<NARF>":
+                self.handle_receive_presaved_files(received_data)
+
+            elif protocol_flag == "<DELETE>":
+                self.get_files_to_delete(received_data)
+
+            elif protocol_flag == "<RENAME>":
+                self.get_file_to_rename(received_data)
+
         except pickle.UnpicklingError:
             return
-
