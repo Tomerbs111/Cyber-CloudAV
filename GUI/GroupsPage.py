@@ -261,7 +261,14 @@ class GroupsPage(ttk.Frame):
         return checked_file_frames_list
 
     def handle_download_file_group(self):
-        pass
+        select_file_frames = self.checked_file_frames()
+        select_file_names_lst = [file_frame.get_filename() for file_frame in select_file_frames]
+        print(select_file_names_lst)
+
+        receive_thread = threading.Thread(
+            target=self.group_communicator.receive_checked_files,
+            args=(select_file_names_lst, self.save_path))
+        receive_thread.start()
 
     def handle_delete_file_group(self):
         frames_to_delete = self.checked_file_frames()
@@ -341,3 +348,5 @@ class GroupsPage(ttk.Frame):
 
         except pickle.UnpicklingError:
             return
+
+

@@ -11,6 +11,9 @@ from GUI.HomePage import HomePage
 class Page(ttk.Frame):
     def __init__(self, master, switch_frame, communicator, current_frame):
         super().__init__(master)
+
+        self.group_list_frame = None
+        self.f_options = None
         self.current_frame = None
         self.master = master
         self.switch_frame = switch_frame
@@ -61,21 +64,21 @@ class Page(ttk.Frame):
 
     def setup_option_frame(self):
         # Code for setting up the Option frame
-        f_options = ttk.Frame(master=self.f_data_center, style="dark")
-        f_options.place(relx=0, rely=0.1, relwidth=0.2, relheight=1)
+        self.f_options = ttk.Frame(master=self.f_data_center, style="dark")
+        self.f_options.place(relx=0, rely=0.1, relwidth=0.2, relheight=1)
 
         CTkButton(
-            f_options,
+            self.f_options,
             text="Add",
             image=CTkImage(Image.open("../GUI/file_icons/add_file_plus_icon.png"), size=(30, 30)),
             compound='left',
             command=self.handle_add_file
         ).pack(side='top', pady=20, anchor='w', padx=10)
 
-        ttk.Separator(f_options, orient="horizontal").pack(side='top', fill='x', pady=5, padx=10)
+        ttk.Separator(self.f_options, orient="horizontal").pack(side='top', fill='x', pady=5, padx=10)
 
         CTkButton(
-            f_options,
+            self.f_options,
             text="Home",
             image=CTkImage(Image.open("../GUI/file_icons/home_icon.png"), size=(20, 20)),
             compound='left',
@@ -83,21 +86,21 @@ class Page(ttk.Frame):
         ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
 
         CTkButton(
-            f_options,
+            self.f_options,
             text="Shared",
             image=CTkImage(Image.open("../GUI/file_icons/shared_icon.png"), size=(20, 20)),
             compound='left'
         ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
 
         CTkButton(
-            f_options,
+            self.f_options,
             text="Favorites",
             image=CTkImage(Image.open("../GUI/file_icons/star_icon.png"), size=(20, 20)),
             compound='left',
         ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
 
         CTkButton(
-            f_options,
+            self.f_options,
             text="Groups",
             image=CTkImage(Image.open("../GUI/file_icons/group_icon.png"), size=(20, 20)),
             compound='left',
@@ -105,20 +108,20 @@ class Page(ttk.Frame):
         ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
 
         CTkButton(
-            f_options,
+            self.f_options,
             text="Recycle bin",
             image=CTkImage(Image.open("../GUI/file_icons/trash_icon.png"), size=(20, 20)),
             compound='left'
         ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
 
         CTkButton(
-            f_options,
+            self.f_options,
             text="Log out",
             image=CTkImage(Image.open("../GUI/file_icons/log_out_icon.png"), size=(20, 20)),
             compound='left'
         ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
 
-        ttk.Label(f_options, text="Storage:").pack(side='top', pady=10, anchor='w', fill='x', padx=10)
+        ttk.Label(self.f_options, text="Storage:").pack(side='top', pady=10, anchor='w', fill='x', padx=10)
 
     def setup_current_page_frame(self):
         self.f_current_page = ttk.Frame(master=self.f_data_center, style="info")
@@ -176,7 +179,6 @@ class MyApp(ttk.Window):
             self.current_frame = new_frame
 
             new_frame.set_on_broadcast_callback(self.group_communicator.on_broadcast_callback)
-
 
         elif frame_class == "HomePage":
             new_frame = HomePage(self.page.f_current_page, self.switch_frame, self.client_communicator)

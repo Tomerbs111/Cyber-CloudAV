@@ -9,7 +9,7 @@ from GroupUser import GroupUser
 from queue import Queue
 
 HOST = '0.0.0.0'
-PORT = 40301
+PORT = 40300
 
 
 class Server:
@@ -215,23 +215,22 @@ class Server:
     def handle_narf_action(self, client_socket, db_manager):
         try:
             saved_file_prop_lst = []
-
+            pickled_data = b''
             if isinstance(db_manager, GroupFiles):
                 group_name = self.get_group_name(client_socket)
                 saved_file_prop_lst = db_manager.get_all_files_from_group(group_name)
+                pickled_data = pickle.dumps(saved_file_prop_lst)
+                print(f"pickled_data groups: {pickled_data}")
+
             elif isinstance(db_manager, UserFiles):
                 saved_file_prop_lst = db_manager.get_all_data()
+                pickled_data = pickle.dumps(saved_file_prop_lst)
+                print(f"pickled_data User: {pickled_data}")
 
-            pickled_data = pickle.dumps(saved_file_prop_lst)
-            data_len = len(pickled_data)
+            if len(pickled_data) > 0:
+                data_len = len(pickled_data).to_bytes(4, byteorder='big')
+                client_socket.send(data_len)
 
-            # Use struct to pack the length as a 4-byte integer (assuming data_len fits in 4 bytes)
-            len_data = struct.pack("!I", data_len)
-
-            # Send the packed length
-            client_socket.send(len_data)
-
-            # Send the pickled data
             client_socket.send(pickled_data)
 
         except Exception as e:
@@ -396,12 +395,11 @@ class Server:
 
     def handle_leave_group_action(self, client_socket, identifier):
         try:
-            client_socket.send(b'<LEFT>')
             for group_user in self.clients_list:
                 if group_user.user_socket == client_socket:
                     self.clients_list.remove(group_user)
                     break
-            print("left group")
+            client_socket.send(b'<LEFT>')
             client_handler = threading.Thread(
                 target=self.handle_requests,
                 args=(client_socket, identifier)
