@@ -124,10 +124,11 @@ class GroupFileFrame(ttk.Frame):
 
 
 class GroupsPage(ttk.Frame):
-    def __init__(self, parent, switch_frame, group_communicator):
+    def __init__(self, parent, switch_frame, group_communicator, group_name):
         super().__init__(parent)
         self.parent_app = parent
         self.switch_frame = switch_frame
+        self.group_name = group_name
         self.group_communicator = group_communicator
 
         # setting up variables

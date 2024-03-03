@@ -5,6 +5,8 @@ import threading
 from database.AuthManager import AuthManager
 from database.GroupFiles import GroupFiles
 from database.UserFiles import UserFiles
+from database.RoomManager import RoomManager
+
 from GroupUser import GroupUser
 from queue import Queue
 
@@ -177,9 +179,18 @@ class Server:
                 elif action == "<UNFAVORITE>":
                     self.handle_unfavorite_action(client_socket, user_files_manager)
 
+                elif action == "<GET_USERS>":
+                    self.handle_get_users_action(client_socket, identifier)
+
+                elif action == "<CREATE_GROUP>":
+                    self.handle_create_group_action(client_socket, identifier)
+
                 elif action == "<JOIN_GROUP>":
                     self.handle_join_group_action(client_socket, identifier)
                     break
+
+                elif action == "<GET_ROOMS>":
+                    self.handle_get_rooms_action(client_socket, identifier)
 
         except (socket.error, IOError) as e:
             print(f"Error in handle_requests: {e}")
@@ -220,12 +231,10 @@ class Server:
                 group_name = self.get_group_name(client_socket)
                 saved_file_prop_lst = db_manager.get_all_files_from_group(group_name)
                 pickled_data = pickle.dumps(saved_file_prop_lst)
-                print(f"pickled_data groups: {pickled_data}")
 
             elif isinstance(db_manager, UserFiles):
                 saved_file_prop_lst = db_manager.get_all_data()
                 pickled_data = pickle.dumps(saved_file_prop_lst)
-                print(f"pickled_data User: {pickled_data}")
 
             if len(pickled_data) > 0:
                 data_len = len(pickled_data).to_bytes(4, byteorder='big')
@@ -375,13 +384,51 @@ class Server:
             print(f"Error in handle_unfavorite_action: {e}")
             client_socket.close()
 
+    def handle_create_group_action(self, client_socket, identifier):
+        user_email = AuthManager().get_email(identifier)
+        group_data = pickle.loads(client_socket.recv(1024))
+
+        group_name = group_data[0]
+        print(f"Group name server: {group_name}")
+        group_participants = group_data[1]
+        group_participants.append(user_email)
+        print(f"Group participants server: {group_participants}")
+
+        # Create a room in the database using RoomManager
+        room_manager = RoomManager()
+        room_manager.insert_room(name=group_name, participants=",".join(group_participants), admin=user_email)
+        print(f"Group created successfully.")
+
+    def handle_get_rooms_action(self, client_socket, identifier):
+        try:
+            user_email = AuthManager().get_email(identifier)
+            room_manager = RoomManager()
+
+            rooms_containing_user = room_manager.get_rooms_by_participant(user_email)
+            client_socket.send(pickle.dumps(rooms_containing_user))
+
+            print(f"Sent rooms containing {user_email} to the client.")
+
+        except Exception as e:
+            print(f"Error in fetch_rooms_for_user: {e}")
+            client_socket.close()
+
+    def handle_get_users_action(self, client_socket, identifier):
+        all_users = AuthManager().get_all_users(identifier)
+        client_socket.send(pickle.dumps(all_users))
+
     def handle_join_group_action(self, client_socket, identifier):
         try:
             user_email = AuthManager().get_email(identifier)
-            self.clients_list.append(GroupUser(client_socket, user_email, "group1"))
+
+            # Receive the group name from the client
+            group_name = client_socket.recv(50).decode('utf-8')
+
+            self.clients_list.append(
+                GroupUser(client_socket, user_email, group_name))  # Append with the received group name
 
             client_socket.send(b'<JOINED>')
-            print("joined group")
+            print(f"User {user_email} joined the group '{group_name}'.")
 
             group_handler = threading.Thread(
                 target=self.handle_group_requests,

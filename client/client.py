@@ -316,6 +316,26 @@ class ClientCommunication:
             self.client_socket.send(file_name.encode('utf-8'))
             print(f"File '{file_name}' unfavorited.")
 
+    def get_all_users(self):
+        self.client_socket.send(b'<GET_USERS>')
+        pickled_all_users = self.client_socket.recv(1024)
+        all_users = pickle.loads(pickled_all_users)
+        return all_users
+
+    def create_group(self, group_name, group_participants):
+        print(f"nigga {group_name}")
+        print(f"nigga2 {group_participants}")
+        self.client_socket.send(b'<CREATE_GROUP>')
+
+        self.client_socket.send(pickle.dumps([group_name, group_participants]))
+
+    def get_all_groups(self):
+        self.client_socket.send(b'<GET_ROOMS>')
+        pickled_all_rooms = self.client_socket.recv(1024)
+        all_rooms = pickle.loads(pickled_all_rooms)
+        return all_rooms
+
+
 
 class GroupCommunication:
     def __init__(self, client_socket, on_broadcast_callback):
@@ -325,8 +345,22 @@ class GroupCommunication:
         self.receive_thread = None  # Thread for receiving broadcasted files
         self.running = False  # Flag to control the thread
 
-    def join_group(self):
+    def get_all_users(self):
+        self.client_socket.send(b'<GET_USERS>')
+        pickled_all_users = self.client_socket.recv(1024)
+        all_users = pickle.loads(pickled_all_users)
+        return all_users
+
+    def create_group(self, group_name, group_participants):
+        print(f"nigga {group_name}")
+        print(f"nigga2 {group_participants}")
+        self.client_socket.send(b'<CREATE_GROUP>')
+
+        self.client_socket.send(pickle.dumps([group_name, group_participants]))
+
+    def join_group(self, group_name):
         self.client_socket.send(b'<JOIN_GROUP>')
+        self.client_socket.send(group_name.encode('utf-8'))
         ans = self.client_socket.recv(64)
         if ans == b'<JOINED>':
             print("joined")

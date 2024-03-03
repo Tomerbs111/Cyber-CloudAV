@@ -1,99 +1,104 @@
-"""
-    Author: Israel Dryer
-    Modified: 2021-04-08
-"""
-import tkinter
-from tkinter import ttk
-from pathlib import Path
-
-from ttkbootstrap import Style
+import tkinter as tk
+import ttkbootstrap as ttk
+from customtkinter import CTkToplevel, CTkFrame, CTkEntry, CTkLabel, CTkButton, CTkScrollableFrame
 
 
-class Application(tkinter.Tk):
+class CreateGroupWin(CTkToplevel):
+    def __init__(self, master, participant_names):
 
-    def __init__(self):
-        super().__init__()
-        self.title('Collapsing Frame')
-        self.style = Style()
+        super().__init__(master)
+        self.geometry("500x500")
+        self.title("Create New Group")
 
-        cf = CollapsingFrame(self)
-        cf.pack(fill='both')
+        self.group_name = tk.StringVar(value="")
 
-        # option group 1
-        group1 = ttk.Frame(cf, padding=10)
-        for x in range(5):
-            ttk.Checkbutton(group1, text=f'Option {x + 1}').pack(fill='x')
-        cf.add(group1, title='Option Group 1', style='primary.TButton')
+        self.selected_participants = {}
+        self.participant_names = participant_names
+        self.selected_name = None
+        self.group_name_error_label = None
+        self.participants_error_label = None
 
-        # option group 2
-        group2 = ttk.Frame(cf, padding=10)
-        for x in range(5):
-            ttk.Checkbutton(group2, text=f'Option {x + 1}').pack(fill='x')
-        cf.add(group2, title='Option Group 2', style='danger.TButton')
+        ttk.Label(self, text="Create your shared file group", font=("Calibri bold", 22)
+                  ).pack(anchor='w', padx=5, pady=15, fill='x')
 
-        # option group 3
-        group3 = ttk.Frame(cf, padding=10)
-        for x in range(5):
-            ttk.Checkbutton(group3, text=f'Option {x + 1}').pack(fill='x')
-        cf.add(group3, title='Option Group 3', style='success.TButton')
+        self.setup_group_name_entry()
+        self.setup_participants_list()
+        self.setup_buttons()
 
+    def setup_group_name_entry(self):
+        container = CTkFrame(self)
+        container.pack(fill="both", expand=True, padx=5, pady=5)
+        CTkLabel(container, text="Group Name:").pack(anchor='w', padx=10, pady=5)
+        self.group_name_entry = CTkEntry(container, textvariable=self.group_name, width=200)
+        self.group_name_entry.pack(anchor='w', padx=10)
 
-class CollapsingFrame(ttk.Frame):
-    """
-    A collapsible frame widget that opens and closes with a button click.
-    """
+        # Error label for Group Name entry
+        self.group_name_error_label = CTkLabel(container, text="", text_color="red")
+        self.group_name_error_label.pack(anchor='w', padx=10)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.columnconfigure(0, weight=1)
-        self.cumulative_rows = 0
-        p = Path(__file__).parent
-        self.images = [tkinter.PhotoImage(name='open', file=p/'assets/icons8_double_up_24px.png'),
-                       tkinter.PhotoImage(name='closed', file=p/'assets/icons8_double_right_24px.png')]
+    def setup_participants_list(self):
+        participants_list = CTkScrollableFrame(self, label_anchor="w", label_text="Participants:",
+                                               label_fg_color='transparent')
+        participants_list.pack(fill="both", expand=True, padx=5)
 
-    def add(self, child, title="", style='primary.TButton', **kwargs):
-        """Add a child to the collapsible frame
+        for name in self.participant_names:
+            participant_var = ttk.StringVar(value="off")
+            self.selected_participants[name] = participant_var
 
-        :param ttk.Frame child: the child frame to add to the widget
-        :param str title: the title appearing on the collapsible section header
-        :param str style: the ttk style to apply to the collapsible section header
-        """
-        if child.winfo_class() != 'TFrame':  # must be a frame
+            participants_container = CTkFrame(participants_list)
+            participants_container.pack(fill='x', expand=True)
+
+            checkbox = ttk.Checkbutton(participants_container, text="", variable=participant_var,
+                                       onvalue="on", offvalue="off")
+            checkbox.pack(side='left', padx=5, pady=5)
+            participant_label = ttk.Label(participants_container, text=name)
+            participant_label.pack(anchor='w', fill='x', expand=True, pady=5)
+
+        # Error label for Participants list
+        self.participants_error_label = CTkLabel(participants_list, text="", text_color="red")
+        self.participants_error_label.pack(anchor='w', padx=5, pady=5)
+
+    def setup_buttons(self):
+        container = CTkFrame(self, bg_color='transparent')
+        container.pack(fill="x", expand=True, padx=5, pady=5, side="bottom")
+
+        submit_button = CTkButton(container, text="Submit", width=20, command=self.on_submit)
+        submit_button.pack(side="left", padx=5)
+
+        cancel_button = CTkButton(container, text="Cancel", width=20)
+        cancel_button.pack(side="left", padx=5)
+
+    def on_submit(self):
+        # Clear previous error messages
+        self.group_name_error_label.configure(text="")
+        self.participants_error_label.configure(text="")
+
+        # Validate Group Name
+        group_name = self.group_name.get()
+        if not group_name:
+            self.group_name_error_label.configure(text="Please enter a group name.")
             return
-        style_color = style.split('.')[0]
-        frm = ttk.Frame(self, style=f'{style_color}.TFrame')
-        frm.grid(row=self.cumulative_rows, column=0, sticky='ew')
 
-        # header title
-        lbl = ttk.Label(frm, text=title, style=f'{style_color}.Invert.TLabel')
-        if kwargs.get('textvariable'):
-            lbl.configure(textvariable=kwargs.get('textvariable'))
-        lbl.pack(side='left', fill='both', padx=10)
+        self.selected_name = group_name
+        # Validate at least one participant is selected
+        selected_participants = [name for name, var in self.selected_participants.items() if var.get() == "on"]
+        if not selected_participants:
+            self.participants_error_label.configure(text="Please select at least one participant.")
+            return
 
-        # header toggle button
-        btn = ttk.Button(frm, image='open', style=style, command=lambda c=child: self._toggle_open_close(child))
-        btn.pack(side='right')
+        print(f"Group Name: {self.selected_name}")
+        print(f"Selected Participants: {selected_participants}")
+        self.destroy()
 
-        # assign toggle button to child so that it's accesible when toggling (need to change image)
-        child.btn = btn
-        child.grid(row=self.cumulative_rows + 1, column=0, sticky='news')
-
-        # increment the row assignment
-        self.cumulative_rows += 2
-
-    def _toggle_open_close(self, child):
-        """
-        Open or close the section and change the toggle button image accordingly
-
-        :param ttk.Frame child: the child element to add or remove from grid manager
-        """
-        if child.winfo_viewable():
-            child.grid_remove()
-            child.btn.configure(image='closed')
-        else:
-            child.grid()
-            child.btn.configure(image='open')
+    def on_cancel(self):
+        self.destroy()
 
 
-if __name__ == '__main__':
-    Application().mainloop()
+def main():
+    root = tk.Tk()
+    app = CreateGroupWin(root, ["Alice", "Bob", "Charlie"])
+    app.mainloop()
+
+
+if __name__ == "__main__":
+    main()

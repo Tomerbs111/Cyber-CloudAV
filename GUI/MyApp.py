@@ -12,9 +12,12 @@ class Page(ttk.Frame):
     def __init__(self, master, switch_frame, communicator, current_frame):
         super().__init__(master)
 
+        self.create_group_top = None
+        self.f_user_groups = None
         self.group_list_frame = None
         self.f_options = None
         self.current_frame = None
+        self.group_menu_frame = None
         self.master = master
         self.switch_frame = switch_frame
         self.communicator = communicator
@@ -27,6 +30,7 @@ class Page(ttk.Frame):
         self.setup_option_frame()
         self.setup_data_center_frame()
         self.setup_current_page_frame()
+        self.setup_group_segment()
 
     def setup_searchbar_frame(self):
         # Code for setting up the Searchbar frame
@@ -101,14 +105,6 @@ class Page(ttk.Frame):
 
         CTkButton(
             self.f_options,
-            text="Groups",
-            image=CTkImage(Image.open("../GUI/file_icons/group_icon.png"), size=(20, 20)),
-            compound='left',
-            command=self.switch_to_groups
-        ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
-
-        CTkButton(
-            self.f_options,
             text="Recycle bin",
             image=CTkImage(Image.open("../GUI/file_icons/trash_icon.png"), size=(20, 20)),
             compound='left'
@@ -121,26 +117,175 @@ class Page(ttk.Frame):
             compound='left'
         ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
 
-        ttk.Label(self.f_options, text="Storage:").pack(side='top', pady=10, anchor='w', fill='x', padx=10)
+        self.group_menu_frame = ttk.Frame(self.f_options, style="dark")
 
     def setup_current_page_frame(self):
         self.f_current_page = ttk.Frame(master=self.f_data_center, style="info")
         self.f_current_page.place(relx=0.21, rely=0.02, relwidth=0.78, relheight=0.96)
 
-    def switch_to_groups(self):
+    def switch_to_groups(self, group_name):
         if self.current_frame.__class__.__name__ != "GroupsPage":
-            print("Switching to groups page")
-            self.switch_frame("GroupsPage", self.communicator)
-        threading.Thread(target=self.current_frame.group_communicator.join_group).start()
+            print(f"Switching to {group_name}")
+            self.switch_frame("GroupsPage", self.communicator, group_name)
+            threading.Thread(target=self.current_frame.group_communicator.join_group, args=(group_name,)).start()
+
+        elif self.current_frame.group_name != group_name:
+            threading.Thread(target=self.current_frame.group_communicator.leave_group).start()
+            print(f"Switching to {group_name}")
+            self.switch_frame("GroupsPage", self.communicator, group_name)
+            threading.Thread(target=self.current_frame.group_communicator.join_group, args=(group_name,)).start()
 
     def switch_to_home(self):
-        threading.Thread(target=self.current_frame.group_communicator.leave_group).start()
+        if self.current_frame.__class__.__name__ == "GroupsPage":
+            threading.Thread(target=self.current_frame.group_communicator.leave_group).start()
         if self.current_frame.__class__.__name__ != "HomePage":
             print("Switching to home page")
             self.switch_frame("HomePage", self.communicator)
 
     def handle_add_file(self):
         threading.Thread(target=self.current_frame.handle_add_file).start()
+
+    def setup_group_segment(self):
+        ttk.Separator(self.f_options, orient="horizontal").pack(side='top', fill='x', pady=5, padx=10)
+
+        self.group_menu_frame.pack(side='top', fill='x')
+        CTkLabel(self.group_menu_frame, text="Your groups:", font=('Arial', 12)).pack(padx=10, fill='x', side='left')
+
+        CTkButton(
+            self.group_menu_frame,
+            text="Create new group",
+            command=self.create_group_window
+        ).pack(side='left', pady=5, fill='x', padx=10)
+
+    def get_group_names(self):
+        groups_list = self.communicator.get_all_groups()
+        print(groups_list)
+        for group in groups_list:
+            CTkButton(
+                self.f_options,
+                text=group,
+                compound='left',
+                fg_color="transparent",
+                command=lambda button_text=group: self.switch_to_groups(button_text)
+            ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
+
+    def create_group_window(self):
+        if self.create_group_top is None or not self.create_group_top.winfo_exists():
+            try:
+                all_user_list = self.communicator.get_all_users()
+            except:
+                return None
+            self.create_group_top = CreateGroupWin(self, all_user_list)
+
+            self.create_group_top.wait_window()
+
+            group_name = self.create_group_top.selected_name
+            submitted_participants = self.create_group_top.submitted_participants
+
+            threading.Thread(target=self.communicator.create_group, args=(group_name, submitted_participants,)).start()
+
+
+            if group_name and submitted_participants:
+                CTkButton(
+                    self.f_options,
+                    text=group_name,
+                    compound='left',
+                    fg_color="transparent",
+                    command=lambda button_text=group_name: self.switch_to_groups(button_text)
+
+                ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
+
+
+class CreateGroupWin(CTkToplevel):
+    def __init__(self, master, participant_names):
+
+        super().__init__(master)
+        self.geometry("500x500")
+        self.title("Create New Group")
+
+        self.group_name = StringVar(value="")
+
+        self.selected_participants = {}
+        self.participant_names = participant_names
+        self.selected_name = None
+        self.group_name_error_label = None
+        self.participants_error_label = None
+        self.submitted_participants = None
+
+        ttk.Label(self, text="Create your shared file group", font=("Calibri bold", 22)
+                  ).pack(anchor='w', padx=5, pady=15, fill='x')
+
+        self.setup_group_name_entry()
+        self.setup_participants_list()
+        self.setup_buttons()
+
+    def setup_group_name_entry(self):
+        container = CTkFrame(self)
+        container.pack(fill="both", expand=True, padx=5, pady=5)
+        CTkLabel(container, text="Group Name:").pack(anchor='w', padx=10, pady=5)
+        self.group_name_entry = CTkEntry(container, textvariable=self.group_name, width=200)
+        self.group_name_entry.pack(anchor='w', padx=10)
+
+        # Error label for Group Name entry
+        self.group_name_error_label = CTkLabel(container, text="", text_color="red")
+        self.group_name_error_label.pack(anchor='w', padx=10)
+
+    def setup_participants_list(self):
+        participants_list = CTkScrollableFrame(self, label_anchor="w", label_text="Participants:",
+                                               label_fg_color='transparent')
+        participants_list.pack(fill="both", expand=True, padx=5)
+
+        for name in self.participant_names:
+            participant_var = ttk.StringVar(value="off")
+            self.selected_participants[name] = participant_var
+
+            participants_container = CTkFrame(participants_list)
+            participants_container.pack(fill='x', expand=True)
+
+            checkbox = ttk.Checkbutton(participants_container, text="", variable=participant_var,
+                                       onvalue="on", offvalue="off")
+            checkbox.pack(side='left', padx=5, pady=5)
+            participant_label = ttk.Label(participants_container, text=name)
+            participant_label.pack(anchor='w', fill='x', expand=True, pady=5)
+
+        # Error label for Participants list
+        self.participants_error_label = CTkLabel(participants_list, text="", text_color="red")
+        self.participants_error_label.pack(anchor='w', padx=5, pady=5)
+
+    def setup_buttons(self):
+        container = CTkFrame(self, bg_color='transparent')
+        container.pack(fill="x", expand=True, padx=5, pady=5, side="bottom")
+
+        submit_button = CTkButton(container, text="Submit", width=20, command=self.on_submit)
+        submit_button.pack(side="left", padx=5)
+
+        cancel_button = CTkButton(container, text="Cancel", width=20, command=self.on_cancel)
+        cancel_button.pack(side="left", padx=5)
+
+    def on_submit(self):
+        # Clear previous error messages
+        self.group_name_error_label.configure(text="")
+        self.participants_error_label.configure(text="")
+
+        # Validate Group Name
+        group_name = self.group_name.get()
+        if not group_name:
+            self.group_name_error_label.configure(text="Please enter a group name.")
+            return
+
+        self.selected_name = group_name
+        # Validate at least one participant is selected
+        self.submitted_participants = [name for name, var in self.selected_participants.items() if var.get() == "on"]
+        if not self.submitted_participants:
+            self.participants_error_label.configure(text="Please select at least one participant.")
+            return
+
+        print(f"Group Name: {self.selected_name}")
+        print(f"Selected Participants: {self.submitted_participants}")
+        self.destroy()
+
+    def on_cancel(self):
+        self.destroy()
 
 
 class MyApp(ttk.Window):
@@ -150,6 +295,7 @@ class MyApp(ttk.Window):
         self.title("Cloud-AV")
 
         self.current_frame = None
+        self.loaded = False
         self.client_communicator = client_communicator
         self.group_communicator = group_communicator
         self.page = Page(self, self.switch_frame, self.client_communicator, self.current_frame)
@@ -167,7 +313,7 @@ class MyApp(ttk.Window):
             self.current_frame = new_frame
 
         elif frame_class == "GroupsPage":
-            new_frame = GroupsPage(self.page.f_current_page, self.switch_frame, self.group_communicator)
+            new_frame = GroupsPage(self.page.f_current_page, self.switch_frame, self.group_communicator, group_name=args[0])
 
             if self.current_frame:
                 self.current_frame.pack_forget()
@@ -191,3 +337,8 @@ class MyApp(ttk.Window):
 
             self.page.current_frame = new_frame
             self.current_frame = new_frame
+
+            if not self.loaded:
+                self.page.after(500, self.page.get_group_names)
+                self.loaded = True
+

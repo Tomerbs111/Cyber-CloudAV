@@ -68,6 +68,11 @@ class AuthManager:
                                           [user_id]).fetchone()
         return get_from_query[0]
 
+    def get_all_users(self, user_id):
+        get_from_query = self.cur.execute("SELECT email FROM Authenticated WHERE id != ?", [user_id]).fetchall()
+        user_emails = [result[0] for result in get_from_query]  # Assuming each result is a tuple with one element
+        return user_emails
+
     def close_db(self):
         self.conn.close()
 
@@ -76,3 +81,8 @@ class AuthManager:
         h = hashlib.sha256()
         h.update(password.encode())
         return h.hexdigest()
+
+
+if __name__ == '__main__':
+    auth = AuthManager()
+    print(auth.get_all_users(1))
