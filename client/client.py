@@ -7,240 +7,87 @@ import threading
 from GUI.MyApp import MyApp
 
 
-class ClientHandleOperations:
-    @staticmethod
-    def receive_checked_files(client_socket, select_file_names_lst, save_path):
-        try:
-            client_socket.send(b'<RECV>')
-
-            # Convert the list to a pickled string
-            pickled_data = pickle.dumps(select_file_names_lst)
-
-            # Send the length of the pickled data as a fixed-size binary value
-            data_len = struct.pack("!I", len(pickled_data))
-            client_socket.send(data_len)
-
-            # Send the pickled data
-            client_socket.sendall(pickled_data)
-
-            # Receive the length of the pickled dictionary data
-            data_len = struct.unpack("!I", client_socket.recv(4))[0]
-
-            # Receive the pickled dictionary data
-            pickled_fdn_dict = client_socket.recv(data_len)
-
-            # Load the dictionary
-            file_data_name_dict = pickle.loads(pickled_fdn_dict)
-
-            for indiv_filename, indiv_filebytes in file_data_name_dict.items():
-                file_path = os.path.join(save_path, indiv_filename)
-                with open(file_path, "wb") as file:
-                    file.write(indiv_filebytes)
-                    print(f"File '{indiv_filename}' received successfully.")
-        except Exception as e:
-            print(f"Error in receive_checked_files: {e}")
-
-    @staticmethod
-    def notify_and_receive_files(client_socket):
-        client_socket.send(b'<NARF>')
-
-        # Receive the packed length (assuming it's a 4-byte integer)
-        len_data = client_socket.recv(4)
-
-        # Unpack the length using struct
-        data_len = int.from_bytes(len_data, byteorder='big')
-
-        # Receive the pickled data
-        pickled_data = client_socket.recv(data_len)
-
-        # Load the pickled data
-        saved_file_prop_lst = pickle.loads(pickled_data)
-
-        return saved_file_prop_lst
-
-    @staticmethod
-    def rename_files(client_socket, rename_data):
-        client_socket.send(b'<RENAME>')
-
-        # Convert the list of tuples to a pickled string
-        pickled_data = pickle.dumps(rename_data)
-        client_socket.send(len(pickled_data).to_bytes(4, byteorder='big'))
-        client_socket.send(pickled_data)
-
-        print("Files renamed successfully.")
-
-    @staticmethod
-    def favorite_file(client_socket, file_name, switch_value):
-        if switch_value == "on":
-            client_socket.send(b'<FAVORITE>')
-
-            client_socket.send(file_name.encode('utf-8'))
-            print(f"File '{file_name}' favorited.")
-        else:
-            client_socket.send(b'<UNFAVORITE>')
-
-            client_socket.send(file_name.encode('utf-8'))
-            print(f"File '{file_name}' unfavorited.")
-
-    @staticmethod
-    def l_when_submit(client_socket, attempt_type, u_email, u_password):
-        client_socket.sendall(attempt_type.encode())
-
-        if attempt_type == "<LOGIN>":
-            print("User info -----------------------")
-            print(f"Email: {u_email}")
-            print(f"Password: {u_password}")
-            print("---------------------------------")
-
-            field_dict = {
-                'email': u_email,
-                'password': u_password
-            }
-
-            client_socket.sendall(pickle.dumps(field_dict))
-
-            server_ans = client_socket.recv(1024).decode()
-            print(f"answer: {server_ans}")
-            return server_ans
-
-    @staticmethod
-    def send_file(client_socket, file_name, short_filename, short_file_date, file_bytes):
-        client_socket.send(b'<SEND>')
-        print('File sent')
-        client_socket.send(pickle.dumps([short_filename, file_bytes, short_file_date]))
-
-        with open(file_name, 'rb') as file:
-            while True:
-                data = file.read(1024)
-                if not data:
-                    break
-                client_socket.send(data)
-
-            client_socket.send(b"<END_OF_DATA>")
-            print(f"File '{file_name}' sent successfully")
-
-
-
 class ClientCommunication:
     def __init__(self, client_socket: socket):
         self.client_socket = client_socket
 
-    def r_when_submit(self, attempt_type, u_email, u_username, u_password):
-        """
-        Send attempt_type to server, then send user info if attempt_type is <REGISTER>, and return server_ans.
+    def send_data(self, client_socket: socket, data: str | bytes):
+        if isinstance(data, str):
+            data = pickle.dumps(data)
 
-        :param attempt_type: str, the type of attempt being made
-        :param u_email: str, the user's email
-        :param u_username: str, the user's username
-        :param u_password: str, the user's password
-        :return: str, the server's answer
-        """
-        self.client_socket.sendall(attempt_type.encode())
-        print("status sent")
+        data_len = len(data).to_bytes(4, byteorder='big')
+        client_socket.send(data_len + data)
 
-        if attempt_type == "<REGISTER>":
-            print("User info -----------------------")
-            print(f"Email: {u_email}")
-            print(f"Username: {u_username}")
-            print(f"Password: {u_password}")
-            print("---------------------------------")
+    def recv_data(self, client_socket: socket):
+        data_len = client_socket.recv(4)
 
-            field_dict = {
-                'email': u_email,
-                'username': u_username,
-                'password': u_password,
-            }
+        while len(data_len) < 4:
+            data_len += client_socket.recv(4 - len(data_len))
+        len_to_int = int.from_bytes(data_len, byteorder='big')
+        data = client_socket.recv(len_to_int)
 
-            self.client_socket.sendall(pickle.dumps(field_dict))
+        while len(data) < len_to_int:
+            data += client_socket.recv(len_to_int - len(data))
 
-            server_ans = self.client_socket.recv(1024).decode()
-            print(f"answer: {server_ans}")
-            return server_ans
+        return data
 
-    def l_when_submit(self, attempt_type, u_email, u_password):
-        """
-        Sends the attempt type, user email, and user password to the server, and receives
-        and returns the server's response.
+    def handle_client_register(self, attempt_type, u_email, u_username, u_password):
+        field_dict = {
+            'email': u_email,
+            'username': u_username,
+            'password': u_password,
+        }
 
-        Parameters:
-            attempt_type (str): The type of login attempt ("<LOGIN>" in this case).
-            u_email (str): The user's email.
-            u_password (str): The user's password.
+        data_dict = {"FLAG": attempt_type, "DATA": field_dict}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
 
-        Returns:
-            str: The server's response to the login attempt.
-        """
-        self.client_socket.sendall(attempt_type.encode())
+        server_answer = pickle.loads(self.recv_data(self.client_socket))
+        answer_flag = server_answer.get("FLAG")
+        return answer_flag
 
-        if attempt_type == "<LOGIN>":
-            print("User info -----------------------")
-            print(f"Email: {u_email}")
-            print(f"Password: {u_password}")
-            print("---------------------------------")
+    def handle_client_login(self, attempt_type, u_email, u_password):
+        field_dict = {
+            'email': u_email,
+            'password': u_password
+        }
 
-            field_dict = {
-                'email': u_email,
-                'password': u_password
-            }
+        data_dict = {"FLAG": attempt_type, "DATA": field_dict}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
 
-            self.client_socket.sendall(pickle.dumps(field_dict))
+        server_answer = pickle.loads(self.recv_data(self.client_socket))
+        print(server_answer)
+        answer_flag = server_answer.get("FLAG")
+        if answer_flag == "<SUCCESS>":
+            username = server_answer.get("DATA")
+            return username
+        else:
+            return answer_flag
 
-            server_ans = self.client_socket.recv(1024).decode()
-            print(f"answer: {server_ans}")
-            return server_ans
-
-    def send_file(self, file_name, short_filename, short_file_date, file_bytes):
-        """
-        Sends a file to the client.
-
-        Args:
-        file_name (str): The full name of the file.
-        short_filename (str): The short name of the file.
-        formatted_file_size (str): The formatted size of the file.
-        short_file_date (str): The short date of the file.
-        file_bytes (bytes): The content of the file in bytes.
-        """
-        # Send the "S" flag to indicate file transmission
-        self.client_socket.send(b'<SEND>')
-        print('File sent')
-        # Send the file metadata and content
-        self.client_socket.send(pickle.dumps([short_filename, file_bytes, short_file_date]))
-
-        # Receive acknowledgment from the client
+    def handle_send_file_request_client(self, file_name, short_filename, short_file_date, file_size):
+        file_content = b''
         with open(file_name, 'rb') as file:
             while True:
-                # Read and send the file in chunks
                 data = file.read(1024)
                 if not data:
                     break
-                self.client_socket.send(data)
+                file_content += data
 
-            # Signal the end of data transmission
-            self.client_socket.send(b"<END_OF_DATA>")
-            print(f"File '{file_name}' sent successfully")
+        all_file_content = [short_filename, file_size, short_file_date, file_content]
+        data_dict = {"FLAG": '<SEND>', "DATA": all_file_content}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
 
-    def receive_checked_files(self, select_file_names_lst, save_path):
+        print(f"File '{file_name}' sent successfully")
+
+    def handle_download_request_client(self, select_file_names_lst, save_path):
         try:
-            self.client_socket.send(b'<RECV>')
+            operation_dict = {"FLAG": '<ACTION>', "OPERATION": "<RECV>"}
+            self.send_data(self.client_socket, pickle.dumps(operation_dict))
 
-            # Convert the list to a pickled string
-            pickled_data = pickle.dumps(select_file_names_lst)
+            data_dict = {"FLAG": '<RECV>', "DATA": select_file_names_lst}
+            self.send_data(self.client_socket, pickle.dumps(data_dict))
 
-            # Send the length of the pickled data as a fixed-size binary value
-            data_len = struct.pack("!I", len(pickled_data))
-            self.client_socket.send(data_len)
-
-            # Send the pickled data
-            self.client_socket.sendall(pickled_data)
-
-            # Receive the length of the pickled dictionary data
-            data_len = struct.unpack("!I", self.client_socket.recv(4))[0]
-
-            # Receive the pickled dictionary data
-            pickled_fdn_dict = self.client_socket.recv(data_len)
-
-            # Load the dictionary
-            file_data_name_dict = pickle.loads(pickled_fdn_dict)
+            received_data = pickle.loads(self.recv_data(self.client_socket))
+            file_data_name_dict = received_data.get("DATA")
 
             for indiv_filename, indiv_filebytes in file_data_name_dict.items():
                 file_path = os.path.join(save_path, indiv_filename)
@@ -251,241 +98,196 @@ class ClientCommunication:
         except Exception as e:
             print(f"Error in receive_checked_files: {e}")
 
-    import struct
+    def handle_presaved_files_client(self):
+        try:
+            operation_dict = {"FLAG": "<NARF>"}
+            self.send_data(self.client_socket, pickle.dumps(operation_dict))
 
-    def notify_and_receive_files(self):
-        """
-        Sends a '<NARF>' message through the client socket, receives the length of the pickled data,
-        receives the pickled data, loads the pickled data, and returns the saved file properties list.
-        """
-        self.client_socket.send(b'<NARF>')
+            received_data = pickle.loads(self.recv_data(self.client_socket))
+            saved_file_prop_lst = received_data.get("DATA")
+            print(saved_file_prop_lst)
 
-        # Receive the packed length (assuming it's a 4-byte integer)
-        len_data = self.client_socket.recv(4)
+            return saved_file_prop_lst
 
-        # Unpack the length using struct
-        data_len = int.from_bytes(len_data, byteorder='big')
+        except Exception as e:
+            print(f"Error in handle_presaved_files_client: {e}")
 
-        # Receive the pickled data
-        pickled_data = self.client_socket.recv(data_len)
-
-        # Load the pickled data
-        saved_file_prop_lst = pickle.loads(pickled_data)
-
-        return saved_file_prop_lst
-
-    def delete_checked_files(self, select_file_names_lst):
-        """
-        Receives a list of checked files, a list of selected file names, and deletes the files.
-        """
-        self.client_socket.send(b'<DELETE>')
-
-        # Convert the list to a pickled string
-        pickled_data = pickle.dumps(select_file_names_lst)
-
-        # Send the length of the pickled data
-        self.client_socket.send(pickled_data)
-
+    def handle_delete_request_client(self, select_file_names_lst):
+        data_dict = {"FLAG": '<DELETE>', "DATA": select_file_names_lst}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
         print("Files deleted successfully.")
 
-    import pickle
-
-    def rename_files(self, rename_data):
-        """
-        Receives a list of checked files, a list of tuples containing old names and new names, and renames the files.
-        """
-        self.client_socket.send(b'<RENAME>')
-
-        # Convert the list of tuples to a pickled string
-        pickled_data = pickle.dumps(rename_data)
-        self.client_socket.send(len(pickled_data).to_bytes(4, byteorder='big'))
-        self.client_socket.send(pickled_data)
-
+    def handle_rename_request_client(self, rename_data):
+        data_dict = {"FLAG": '<RENAME>', "DATA": rename_data}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
         print("Files renamed successfully.")
 
-    def favorite_file(self, file_name, switch_value):
+    def handle_set_favorite_request_client(self, file_name, switch_value):
         if switch_value == "on":
-            self.client_socket.send(b'<FAVORITE>')
+            data_dict_on = {"FLAG": '<FAVORITE>', "DATA": file_name}
+            self.send_data(self.client_socket, pickle.dumps(data_dict_on))
 
-            self.client_socket.send(file_name.encode('utf-8'))
             print(f"File '{file_name}' favorited.")
 
-        else:
-            self.client_socket.send(b'<UNFAVORITE>')
+        elif switch_value == "off":
+            data_dict_off = {"FLAG": '<UNFAVORITE>', "DATA": file_name}
+            self.send_data(self.client_socket, pickle.dumps(data_dict_off))
 
-            self.client_socket.send(file_name.encode('utf-8'))
             print(f"File '{file_name}' unfavorited.")
 
-    def get_all_users(self):
-        self.client_socket.send(b'<GET_USERS>')
-        pickled_all_users = self.client_socket.recv(1024)
-        all_users = pickle.loads(pickled_all_users)
+    def get_all_registered_users(self):
+        data_dict = {"FLAG": '<GET_USERS>'}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
+
+        received_data = pickle.loads(self.recv_data(self.client_socket))
+        all_users = received_data.get("DATA")
         return all_users
 
-    def create_group(self, group_name, group_participants):
-        print(f"nigga {group_name}")
-        print(f"nigga2 {group_participants}")
-        self.client_socket.send(b'<CREATE_GROUP>')
-
-        self.client_socket.send(pickle.dumps([group_name, group_participants]))
+    def handle_create_group_request(self, group_name, group_participants, permissions):
+        group_properties = [group_name, group_participants, permissions]
+        data_dict = {"FLAG": '<CREATE_GROUP>', "DATA": group_properties}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
 
     def get_all_groups(self):
-        self.client_socket.send(b'<GET_ROOMS>')
-        pickled_all_rooms = self.client_socket.recv(1024)
-        all_rooms = pickle.loads(pickled_all_rooms)
+        operation_dict = {"FLAG": "<GET_ROOMS>"}
+        self.send_data(self.client_socket, pickle.dumps(operation_dict))
+
+        received_data = pickle.loads(self.recv_data(self.client_socket))
+        all_rooms = received_data.get("DATA")
         return all_rooms
 
 
-
 class GroupCommunication:
-    def __init__(self, client_socket, on_broadcast_callback):
+    def __init__(self, client_socket, handle_broadcast_requests):
         self.client_socket = client_socket
-        self.on_broadcast_callback = on_broadcast_callback  # Define the callback function
+        self.handle_broadcast_requests = handle_broadcast_requests  # Define the callback function
 
         self.receive_thread = None  # Thread for receiving broadcasted files
         self.running = False  # Flag to control the thread
 
-    def get_all_users(self):
-        self.client_socket.send(b'<GET_USERS>')
-        pickled_all_users = self.client_socket.recv(1024)
-        all_users = pickle.loads(pickled_all_users)
+    def send_data(self, client_socket: socket, data: str | bytes):
+        if isinstance(data, str):
+            data = pickle.dumps(data)
+
+        data_len = len(data).to_bytes(4, byteorder='big')
+        client_socket.send(data_len + data)
+
+    def recv_data(self, client_socket: socket):
+        data_len = client_socket.recv(4)
+
+        while len(data_len) < 4:
+            data_len += client_socket.recv(4 - len(data_len))
+        len_to_int = int.from_bytes(data_len, byteorder='big')
+        data = client_socket.recv(len_to_int)
+
+        while len(data) < len_to_int:
+            data += client_socket.recv(len_to_int - len(data))
+
+        return data
+
+    def get_all_registered_users(self):
+        data_dict = {"FLAG": '<GET_USERS>'}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
+
+        received_data = pickle.loads(self.recv_data(self.client_socket))
+        all_users = received_data.get("DATA")
         return all_users
 
-    def create_group(self, group_name, group_participants):
-        print(f"nigga {group_name}")
-        print(f"nigga2 {group_participants}")
-        self.client_socket.send(b'<CREATE_GROUP>')
+    def handle_create_group_request(self, group_name, group_participants):
+        data_dict = {"FLAG": '<CREATE_GROUP>', "DATA": [group_name, group_participants]}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
 
-        self.client_socket.send(pickle.dumps([group_name, group_participants]))
+    def handle_join_group_request(self, group_name):
+        data_dict = {"FLAG": '<JOIN_GROUP>', "DATA": group_name}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
 
-    def join_group(self, group_name):
-        self.client_socket.send(b'<JOIN_GROUP>')
-        self.client_socket.send(group_name.encode('utf-8'))
-        ans = self.client_socket.recv(64)
-        if ans == b'<JOINED>':
+        received_data = pickle.loads(self.recv_data(self.client_socket))
+        print(received_data)
+        if received_data.get("FLAG") == '<JOINED>':
             print("joined")
-            saved_file_prop_lst = self.notify_and_receive_files()
-            self.on_broadcast_callback(pickle.dumps([saved_file_prop_lst, "<NARF>"]))
-            # Create a new thread to receive broadcasted files
-            # Start the thread when the client joins the group
+            saved_file_prop_lst = self.handle_presaved_files_group()
+            print("i like man")
+            # Check if the callback is set before calling it
+            if self.handle_broadcast_requests:
+                self.handle_broadcast_requests(pickle.dumps({"FLAG": "<NARF>", "DATA": saved_file_prop_lst}))
+
             self.running = True
-            self.receive_thread = threading.Thread(target=self.receive_broadcasted_files,
-                                                   args=(self.on_broadcast_callback,))
+            self.receive_thread = threading.Thread(target=self.handle_broadcasted_group_data,
+                                                   args=(self.handle_broadcast_requests,))
             self.receive_thread.start()
 
-    def leave_group(self):
-        self.client_socket.send(b'<LEAVE_GROUP>')
+    def handle_leave_group_request(self):
+        self.send_data(self.client_socket, pickle.dumps({"FLAG": '<LEAVE_GROUP>'}))
         self.running = False
         if self.receive_thread:
             self.receive_thread.join()
 
-    def receive_broadcasted_files(self, on_broadcast_callback):
+    def handle_broadcasted_group_data(self, on_broadcast_callback):
         while self.running:
-            data = self.client_socket.recv(1024)
+            received_data = pickle.loads(self.recv_data(self.client_socket))
+            print(f"Received data from broadcast in client: {received_data}")
+            flag = received_data.get("FLAG")
 
-            if data == b'<LEFT>':
+            if flag == "<LEFT>":
+                print("left")
                 self.running = False
                 break
-            # Call the callback function in GroupsPage
-            self.on_broadcast_callback(data)
 
-    def send_file(self, file_name, short_filename, short_file_date, file_bytes):
-        self.client_socket.send(b'<SEND>')
+            # Check if the callback is set before calling it
+            if on_broadcast_callback:
+                on_broadcast_callback(received_data)
 
-        self.client_socket.send(pickle.dumps([short_filename, file_bytes, short_file_date]))
-
+    def handle_send_file_request_group(self, file_name, short_filename, short_file_date, file_size):
+        file_content = b''
         with open(file_name, 'rb') as file:
             while True:
-                # Read and send the file in chunks
                 data = file.read(1024)
                 if not data:
                     break
-                self.client_socket.send(data)
+                file_content += data
 
-            # Signal the end of data transmission
-            self.client_socket.send(b"<END_OF_DATA>")
-            print(f"File '{file_name}' sent successfully")
+        all_file_content = [short_filename, file_size, short_file_date, file_content]
+        data_dict = {"FLAG": '<SEND>', "DATA": all_file_content}
 
-    def delete_checked_files(self, select_file_names_lst):
-        self.client_socket.send(b'<DELETE>')
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
+        print(f"File '{file_name}' sent successfully")
 
-        # Convert the list to a pickled string
-        pickled_data = pickle.dumps(select_file_names_lst)
-
-        # Send the length of the pickled data
-        self.client_socket.send(pickled_data)
-
-    def notify_and_receive_files(self):
-        """
-        Sends a '<NARF>' message through the client socket, receives the length of the pickled data,
-        receives the pickled data, loads the pickled data, and returns the saved file properties list.
-        """
-        self.client_socket.send(b'<NARF>')
-
-        # Receive the packed length (assuming it's a 4-byte integer)
-        len_data = self.client_socket.recv(4)
-
-        # Unpack the length using struct
-        data_len = int.from_bytes(len_data, byteorder='big')
-
-        # Receive the pickled data
-        pickled_data = self.client_socket.recv(data_len)
-
-        # Load the pickled data
-        saved_file_prop_lst = pickle.loads(pickled_data)
-
-        return saved_file_prop_lst
-
-    def rename_files(self, rename_data):
-        """
-        Receives a list of checked files, a list of tuples containing old names and new names, and renames the files.
-        """
-        self.client_socket.send(b'<RENAME>')
-        print("sent")
-        # Convert the list of tuples to a pickled string
-        pickled_data = pickle.dumps(rename_data)
-        self.client_socket.send(len(pickled_data).to_bytes(4, byteorder='big'))
-        self.client_socket.send(pickled_data)
-
-        print("Files renamed successfully.")
-
-    def receive_checked_files(self, select_file_names_lst, save_path):
+    def handle_download_request_group(self, select_file_names_lst):
         try:
-            self.client_socket.send(b'<RECV>')
-
-            # Convert the list to a pickled string
-            pickled_data = pickle.dumps(select_file_names_lst)
-
-            # Send the length of the pickled data as a fixed-size binary value
-            data_len = struct.pack("!I", len(pickled_data))
-            self.client_socket.send(data_len)
-
-            # Send the pickled data
-            self.client_socket.sendall(pickled_data)
-
-            # Receive the length of the pickled dictionary data
-            data_len = struct.unpack("!I", self.client_socket.recv(4))[0]
-
-            # Receive the pickled dictionary data
-            pickled_fdn_dict = self.client_socket.recv(data_len)
-
-            # Load the dictionary
-            file_data_name_dict = pickle.loads(pickled_fdn_dict)
-
-            for indiv_filename, indiv_filebytes in file_data_name_dict.items():
-                file_path = os.path.join(save_path, indiv_filename)
-                with open(file_path, "wb") as file:
-                    file.write(indiv_filebytes)
-                    print(f"File '{indiv_filename}' received successfully.")
-
+            print("Receiving files...")
+            data_dict = {"FLAG": '<RECV>', "DATA": select_file_names_lst}
+            self.send_data(self.client_socket, pickle.dumps(data_dict))
 
         except Exception as e:
             print(f"Error in receive_checked_files: {e}")
 
+    def handle_presaved_files_group(self):
+        try:
+            operation_dict = {"FLAG": "<NARF>"}
+            self.send_data(self.client_socket, pickle.dumps(operation_dict))
+
+            received_data = pickle.loads(self.recv_data(self.client_socket))
+            saved_file_prop_lst = received_data.get("DATA")
+
+            return saved_file_prop_lst
+
+        except Exception as e:
+            print(f"Error in handle_presaved_files_client: {e}")
+
+    def handle_delete_request_group(self, select_file_names_lst):
+        data_dict = {"FLAG": '<DELETE>', "DATA": select_file_names_lst}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
+        print("Files deleted successfully.")
+
+    def handle_rename_request_group(self, rename_data):
+        data_dict = {"FLAG": '<RENAME>', "DATA": rename_data}
+        self.send_data(self.client_socket, pickle.dumps(data_dict))
+        print("Files renamed successfully.")
+
 
 # ------------Client setup------------
-HOST = '127.0.0.1'
-PORT = 40300
+HOST = '192.168.1.199'  # '192.168.1.152'
+PORT = 40301
 
 
 class MainClient:

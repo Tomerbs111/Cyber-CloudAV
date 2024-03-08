@@ -257,16 +257,13 @@ class HomePage(ttk.Frame):
         self.f_file_list.place(relx=0, rely=0.09, relwidth=1, relheight=0.91)
 
     def notify_and_receive_files(self):
-        narf_answer = self.client_communicator.notify_and_receive_files()
-        if narf_answer == "<NO_DATA>":
-            return
+        narf_answer = self.client_communicator.handle_presaved_files_client()
 
-        else:
-            for individual_file in self.client_communicator.notify_and_receive_files():
-                (file_name, file_bytes, file_date, favorite) = individual_file
+        for individual_file in narf_answer:
+            (file_name, file_bytes, file_date, favorite) = individual_file
 
-                formatted_file_size = self.format_file_size(file_bytes)  # a func from Gui_CAV.py
-                self.add_file_frame(file_name, formatted_file_size, file_date, favorite)  # a func from Gui_CAV.py
+            formatted_file_size = self.format_file_size(file_bytes)  # a func from Gui_CAV.py
+            self.add_file_frame(file_name, formatted_file_size, file_date, favorite)  # a func from Gui_CAV.py
 
     def handle_add_file(self):
         try:
@@ -288,8 +285,8 @@ class HomePage(ttk.Frame):
                 self.prepare_for_display(file_name, file_bytes, file_date)
 
             send_file_thread = threading.Thread(
-                target=self.client_communicator.send_file(file_name, short_filename,
-                                                          short_file_date, file_bytes))
+                target=self.client_communicator.handle_send_file_request_client(file_name, short_filename,
+                                                                                short_file_date, file_bytes))
             send_file_thread.start()
 
             favorite = 0
@@ -316,12 +313,12 @@ class HomePage(ttk.Frame):
         file_name = file_frame.get_filename()
         if new_value == "on":
             favorite_thread = threading.Thread(
-                target=self.client_communicator.favorite_file,
+                target=self.client_communicator.handle_set_favorite_request_client,
                 args=(file_name, new_value))
             favorite_thread.start()
         else:
             unfavorite_thread = threading.Thread(
-                target=self.client_communicator.favorite_file,
+                target=self.client_communicator.handle_set_favorite_request_client,
                 args=(file_name, new_value))
             unfavorite_thread.start()
 
@@ -357,7 +354,7 @@ class HomePage(ttk.Frame):
         frames_to_delete = self.checked_file_frames()
         names_to_delete_lst = [file_frame.get_filename() for file_frame in frames_to_delete]
 
-        self.client_communicator.delete_checked_files(names_to_delete_lst)
+        self.client_communicator.handle_delete_request_client(names_to_delete_lst)
         for file_frame in frames_to_delete:
             file_frame.kill_frame()
 
@@ -368,7 +365,7 @@ class HomePage(ttk.Frame):
         select_file_names_lst = [file_frame.get_filename() for file_frame in select_file_frames]
 
         receive_thread = threading.Thread(
-            target=self.client_communicator.receive_checked_files,
+            target=self.client_communicator.handle_download_request_client,
             args=(select_file_names_lst, self.save_path))
         receive_thread.start()
 
@@ -387,7 +384,7 @@ class HomePage(ttk.Frame):
                 new_name_with_format = f"{new_name}{file_format}"
 
                 rename_thread = threading.Thread(
-                    target=self.client_communicator.rename_files,
+                    target=self.client_communicator.handle_rename_request_client,
                     args=((old_name, new_name_with_format),))
                 rename_thread.start()
 
