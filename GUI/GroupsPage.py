@@ -1,10 +1,6 @@
 import pickle
 import threading
 from tkinter import filedialog as fd
-from datetime import datetime
-import customtkinter
-from ttkbootstrap.scrolled import ScrolledFrame
-import re
 import ttkbootstrap as ttk
 from customtkinter import *
 from PIL import Image, ImageTk
@@ -124,12 +120,13 @@ class GroupFileFrame(ttk.Frame):
 
 
 class GroupsPage(ttk.Frame):
-    def __init__(self, parent, switch_frame, group_communicator, group_name):
+    def __init__(self, parent, switch_frame, group_communicator, group_name, permissions):
         super().__init__(parent)
         self.parent_app = parent
         self.switch_frame = switch_frame
         self.group_name = group_name
         self.group_communicator = group_communicator
+        self.permissions = permissions
 
         # setting up variables
         self.rename_button = None
@@ -139,9 +136,9 @@ class GroupsPage(ttk.Frame):
         self.save_path = os.path.join(os.path.expanduser("~"), "Downloads")
 
         # setting up the frame
-        self.setup_file_actions_frame()
+        self.setup_group_file_actions_frame()
 
-    def setup_file_actions_frame(self):
+    def setup_group_file_actions_frame(self):
         f_action = ttk.Frame(master=self)
         f_action.place(relx=0, rely=0, relwidth=1, relheight=0.05)
 
@@ -151,14 +148,14 @@ class GroupsPage(ttk.Frame):
             compound='left',
             text="Delete",
             width=30,
-            command=self.handle_delete_file_group,
+            command=self.handle_delete_request_group,
             fg_color='transparent'
         )
         delete_button.pack(side='left', padx=5)
 
         download_button = CTkButton(
             master=f_action,
-            command=self.handle_download_file_group,
+            command=self.handle_download_request_group,
             image=CTkImage(Image.open("../GUI/file_icons/download_icon.png"), size=(20, 20)),
             compound='left',
             text="Download",
@@ -173,7 +170,7 @@ class GroupsPage(ttk.Frame):
             compound='left',
             text="Rename",
             width=30,
-            command=self.handle_rename_file_group,
+            command=self.handle_rename_request_group,
             fg_color='transparent'
         )
         self.rename_button.pack(side='left', padx=5)
@@ -193,6 +190,33 @@ class GroupsPage(ttk.Frame):
         self.f_file_list = CTkScrollableFrame(master=combined_frame, fg_color='transparent')
         self.f_file_list.place(relx=0, rely=0.09, relwidth=1, relheight=0.91)
 
+    def set_size_format(self, file_size_bytes):
+        if file_size_bytes < 1024:
+            return f"{file_size_bytes} bytes"
+        elif file_size_bytes < 1024 ** 2:
+            return f"{file_size_bytes / 1024:.2f} KB"
+        elif file_size_bytes < 1024 ** 3:
+            return f"{file_size_bytes / (1024 ** 2):.2f} MB"
+        else:
+            return f"{file_size_bytes / (1024 ** 3):.2f} GB"
+
+    def set_frame_properties_for_display(self, file_name, file_bytes, file_uploadate: date):
+        short_filename = os.path.basename(file_name)
+        formatted_file_size = self.set_size_format(file_bytes)
+
+        short_file_date = file_uploadate.strftime('%B %d, %Y')
+
+        return short_filename, formatted_file_size, short_file_date
+
+    def get_checked_file_frames(self):
+        checked_file_frames_list = []
+        for file_frame in self.group_file_frames:
+            if file_frame.get_checkvar():
+                checked_file_frames_list.append(file_frame)
+                file_frame.uncheck()
+
+        return checked_file_frames_list
+
     def add_file_frame(self, group_file_name, group_file_size, group_file_date, group_file_owner):
         file_frame = GroupFileFrame(self.f_file_list, group_file_name, group_file_size, group_file_date,
                                     group_file_owner)
@@ -201,14 +225,30 @@ class GroupsPage(ttk.Frame):
         self.group_file_frames.append(file_frame)
         self.file_frame_counter += 1
 
-    def handle_receive_presaved_files(self, received_data):
+    def get_and_destroy_checked_file_names(self, names_to_delete_lst):
+        for file_frame in self.group_file_frames:
+            filename = file_frame.get_filename()
+            if filename in names_to_delete_lst:
+                file_frame.kill_frame()
+
+        self.file_frame_counter = len(self.group_file_frames)
+
+    def get_file_name_to_rename(self, received_data):
+        old_name, new_name = received_data
+        for file_frame in self.group_file_frames:
+            filename = file_frame.get_filename()
+            if filename == old_name:
+                file_frame.set_filename(new_name)
+                file_frame.update_idletasks()
+
+    def handle_presenting_presaved_files(self, received_data):
         for individual_file in received_data:
             owner, name, size, date, group_name = individual_file
 
-            formatted_file_size = self.format_file_size(size)  # a func from Gui_CAV.py
+            formatted_file_size = self.set_size_format(size)  # a func from Gui_CAV.py
             self.add_file_frame(name, formatted_file_size, date, owner)  # a func from Gui_CAV.py
 
-    def handle_add_file(self):
+    def handle_send_file_request_group(self):
         filetypes = (
             ('All files', '*.*'),
             ('text files', '*.txt'),
@@ -224,55 +264,34 @@ class GroupsPage(ttk.Frame):
         file_date = date.today()
 
         short_filename, formatted_file_size, short_file_date = \
-            self.prepare_for_display(file_name, file_bytes, file_date)
+            self.set_frame_properties_for_display(file_name, file_bytes, file_date)
 
         send_file_thread = threading.Thread(
-            target=self.group_communicator.send_file,
+            target=self.group_communicator.handle_send_file_request,
             args=(file_name, short_filename, short_file_date, file_bytes)
         )
         send_file_thread.start()
 
         self.add_file_frame(short_filename, formatted_file_size, short_file_date, group_file_owner="self")
 
-    def format_file_size(self, file_size_bytes):
-        if file_size_bytes < 1024:
-            return f"{file_size_bytes} bytes"
-        elif file_size_bytes < 1024 ** 2:
-            return f"{file_size_bytes / 1024:.2f} KB"
-        elif file_size_bytes < 1024 ** 3:
-            return f"{file_size_bytes / (1024 ** 2):.2f} MB"
-        else:
-            return f"{file_size_bytes / (1024 ** 3):.2f} GB"
-
-    def prepare_for_display(self, file_name, file_bytes, file_uploadate: date):
-        short_filename = os.path.basename(file_name)
-        formatted_file_size = self.format_file_size(file_bytes)
-
-        short_file_date = file_uploadate.strftime('%B %d, %Y')
-
-        return short_filename, formatted_file_size, short_file_date
-
-    def checked_file_frames(self):
-        checked_file_frames_list = []
-        for file_frame in self.group_file_frames:
-            if file_frame.get_checkvar():
-                checked_file_frames_list.append(file_frame)
-                file_frame.uncheck()
-
-        return checked_file_frames_list
-
-    def handle_download_file_group(self):
-        select_file_frames = self.checked_file_frames()
+    def handle_download_request_group(self):
+        select_file_frames = self.get_checked_file_frames()
         select_file_names_lst = [file_frame.get_filename() for file_frame in select_file_frames]
-        print(select_file_names_lst)
 
         receive_thread = threading.Thread(
             target=self.group_communicator.receive_checked_files,
-            args=(select_file_names_lst, self.save_path))
+            args=(select_file_names_lst,))
         receive_thread.start()
 
-    def handle_delete_file_group(self):
-        frames_to_delete = self.checked_file_frames()
+    def handle_saving_broadcasted_files(self, file_data_name_dict, save_path):
+        for indiv_filename, indiv_filebytes in file_data_name_dict.items():
+            file_path = os.path.join(save_path, indiv_filename)
+            with open(file_path, "wb") as file:
+                file.write(indiv_filebytes)
+                print(f"File '{indiv_filename}' received successfully.")
+
+    def handle_delete_request_group(self):
+        frames_to_delete = self.get_checked_file_frames()
         names_to_delete_lst = [file_frame.get_filename() for file_frame in frames_to_delete]
 
         self.delete_thread = threading.Thread(
@@ -284,17 +303,9 @@ class GroupsPage(ttk.Frame):
 
         self.file_frame_counter = len(self.group_file_frames)
 
-    def get_files_to_delete(self, names_to_delete_lst):
-        for file_frame in self.group_file_frames:
-            filename = file_frame.get_filename()
-            if filename in names_to_delete_lst:
-                file_frame.kill_frame()
-
-        self.file_frame_counter = len(self.group_file_frames)
-
-    def handle_rename_file_group(self):
+    def handle_rename_request_group(self):
         try:
-            file_frame = self.checked_file_frames()[0]
+            file_frame = self.get_checked_file_frames()[0]
             old_name = file_frame.get_filename()
 
             file_format = os.path.splitext(old_name)[1]
@@ -316,38 +327,35 @@ class GroupsPage(ttk.Frame):
         except IndexError:
             pass
 
-    def get_file_to_rename(self, received_data):
-        old_name, new_name = received_data
-        for file_frame in self.group_file_frames:
-            filename = file_frame.get_filename()
-            if filename == old_name:
-                file_frame.set_filename(new_name)
-                file_frame.update_idletasks()
+    def set_handle_broadcast_requests_function(self):
+        self.group_communicator.handle_broadcast_requests = self.handle_broadcast_requests
 
-    def set_on_broadcast_callback(self, on_broadcast_callback):
-        self.group_communicator.on_broadcast_callback = self.on_broadcast_callback
-
-    def on_broadcast_callback(self, pickled_data):
+    def handle_broadcast_requests(self, pickled_data):
         try:
-            data = pickle.loads(pickled_data)
-            protocol_flag = data[1]
-            received_data = data[0]
+            try:
+                data = pickle.loads(pickled_data)
+            except TypeError:
+                data = pickled_data
+
+            protocol_flag = data.get("FLAG")
+            received_data = data.get("DATA")
 
             if protocol_flag == "<SEND>":
                 for item in received_data:
                     owner, name, size, date, group_name = item
-                    self.add_file_frame(name, self.format_file_size(size), date, owner)
+                    self.add_file_frame(name, self.set_size_format(size), date, owner)
 
             elif protocol_flag == "<NARF>":
-                self.handle_receive_presaved_files(received_data)
+                self.handle_presenting_presaved_files(received_data)
 
             elif protocol_flag == "<DELETE>":
-                self.get_files_to_delete(received_data)
+                self.get_and_destroy_checked_file_names(received_data)
+
+            elif protocol_flag == "<RECV>":
+                self.handle_saving_broadcasted_files(received_data, self.save_path)
 
             elif protocol_flag == "<RENAME>":
-                self.get_file_to_rename(received_data)
+                self.get_file_name_to_rename(received_data)
 
         except pickle.UnpicklingError:
             return
-
-
