@@ -157,7 +157,7 @@ class Page(ttk.Frame):
             self.switch_frame("HomePage", self.communicator)
 
     def handle_send_file_request(self):
-        threading.Thread(target=self.current_frame.handle_send_file_request_group).start()
+        threading.Thread(target=self.current_frame.handle_send_file_request).start()
 
     def handle_create_group_window(self):
         if self.create_group_top is None or not self.create_group_top.winfo_exists():

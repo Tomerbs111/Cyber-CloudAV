@@ -179,11 +179,8 @@ class HomePage(ttk.Frame):
 
         self.setup_file_actions_frame()
 
-        # TODO: dont call NARF twice if HomePage is reloaded
-        narf_thread = threading.Thread(target=self.notify_and_receive_files)
+        narf_thread = threading.Thread(target=self.handle_presenting_presaved_files)
         narf_thread.start()
-
-
     def setup_file_actions_frame(self):
         f_action = ttk.Frame(master=self)
         f_action.place(relx=0, rely=0, relwidth=1, relheight=0.05)
@@ -194,14 +191,14 @@ class HomePage(ttk.Frame):
             compound='left',
             text="Delete",
             width=30,
-            command=self.delete_checked_file,
+            command=self.handle_delete_request_client,
             fg_color='transparent'
         )
         delete_button.pack(side='left', padx=5)
 
         download_button = CTkButton(
             master=f_action,
-            command=self.receive_checked_files,
+            command=self.handle_download_request_client,
             image=CTkImage(Image.open("../GUI/file_icons/download_icon.png"), size=(20, 20)),
             compound='left',
             text="Download",
@@ -216,7 +213,7 @@ class HomePage(ttk.Frame):
             compound='left',
             text="Rename",
             width=30,
-            command=self.rename_checked_file,
+            command=self.handle_rename_request_client,
             fg_color='transparent'
         )
         self.rename_button.pack(side='left', padx=5)
@@ -255,17 +252,52 @@ class HomePage(ttk.Frame):
 
         self.f_file_list = CTkScrollableFrame(master=combined_frame, fg_color='transparent')
         self.f_file_list.place(relx=0, rely=0.09, relwidth=1, relheight=0.91)
+    @staticmethod
+    def set_size_format(file_size_bytes):
+        if file_size_bytes < 1024:
+            return f"{file_size_bytes} bytes"
+        elif file_size_bytes < 1024 ** 2:
+            return f"{file_size_bytes / 1024:.2f} KB"
+        elif file_size_bytes < 1024 ** 3:
+            return f"{file_size_bytes / (1024 ** 2):.2f} MB"
+        else:
+            return f"{file_size_bytes / (1024 ** 3):.2f} GB"
+    def set_frame_properties_for_display(self, file_name, file_bytes, file_uploadate: date):
+        short_filename = os.path.basename(file_name)
+        formatted_file_size = self.set_size_format(file_bytes)
 
-    def notify_and_receive_files(self):
+        short_file_date = file_uploadate.strftime('%B %d, %Y')
+
+        return short_filename, formatted_file_size, short_file_date
+    def get_checked_file_frames(self):
+        checked_file_frames_list = []
+        for file_frame in self.file_frames:
+            if file_frame.get_checkvar():
+                checked_file_frames_list.append(file_frame)
+                file_frame.uncheck()
+
+        return checked_file_frames_list
+    def add_file_frame(self, file_name, file_size, file_date, favorite):
+        file_frame = FileFrame(self.f_file_list, file_name, file_size, file_date,
+                               favorite_callback=self.handle_favorite_toggle)
+
+        file_frame.pack(expand=True, fill='x', side='top')
+        self.file_frames.append(file_frame)
+        self.file_frame_counter += 1
+
+        if favorite == 1:
+            file_frame.favorite_button.configure(
+                image=CTkImage(Image.open("../GUI/file_icons/star_icon_light.png"), size=(20, 20)))
+            file_frame.check_favorite.set("on")
+    def handle_presenting_presaved_files(self):
         narf_answer = self.client_communicator.handle_presaved_files_client()
 
         for individual_file in narf_answer:
             (file_name, file_bytes, file_date, favorite) = individual_file
 
-            formatted_file_size = self.format_file_size(file_bytes)  # a func from Gui_CAV.py
+            formatted_file_size = self.set_size_format(file_bytes)  # a func from Gui_CAV.py
             self.add_file_frame(file_name, formatted_file_size, file_date, favorite)  # a func from Gui_CAV.py
-
-    def handle_add_file(self):
+    def handle_send_file_request(self):
         try:
             filetypes = (
                 ('All files', '*.*'),
@@ -282,11 +314,11 @@ class HomePage(ttk.Frame):
             file_date = date.today()
 
             short_filename, formatted_file_size, short_file_date = \
-                self.prepare_for_display(file_name, file_bytes, file_date)
+                self.set_frame_properties_for_display(file_name, file_bytes, file_date)
 
             send_file_thread = threading.Thread(
-                target=self.client_communicator.handle_send_file_request_client(file_name, short_filename,
-                                                                                short_file_date, file_bytes))
+                target=self.client_communicator.handle_send_file_request(file_name, short_filename, short_file_date,
+                                                                         file_bytes))
             send_file_thread.start()
 
             favorite = 0
@@ -295,21 +327,15 @@ class HomePage(ttk.Frame):
 
         except FileNotFoundError:
             return
+    def handle_download_request_client(self):
+        select_file_frames = self.get_checked_file_frames()
+        select_file_names_lst = [file_frame.get_filename() for file_frame in select_file_frames]
 
-    def add_file_frame(self, file_name, file_size, file_date, favorite):
-        file_frame = FileFrame(self.f_file_list, file_name, file_size, file_date,
-                               favorite_callback=self.favorite_file_pressed)
-
-        file_frame.pack(expand=True, fill='x', side='top')
-        self.file_frames.append(file_frame)
-        self.file_frame_counter += 1
-
-        if favorite == 1:
-            file_frame.favorite_button.configure(
-                image=CTkImage(Image.open("../GUI/file_icons/star_icon_light.png"), size=(20, 20)))
-            file_frame.check_favorite.set("on")
-
-    def favorite_file_pressed(self, file_frame, new_value):
+        receive_thread = threading.Thread(
+            target=self.client_communicator.handle_download_request_client,
+            args=(select_file_names_lst, self.save_path))
+        receive_thread.start()
+    def handle_favorite_toggle(self, file_frame, new_value):
         file_name = file_frame.get_filename()
         if new_value == "on":
             favorite_thread = threading.Thread(
@@ -321,57 +347,9 @@ class HomePage(ttk.Frame):
                 target=self.client_communicator.handle_set_favorite_request_client,
                 args=(file_name, new_value))
             unfavorite_thread.start()
-
-    @staticmethod
-    def format_file_size(file_size_bytes):
-        if file_size_bytes < 1024:
-            return f"{file_size_bytes} bytes"
-        elif file_size_bytes < 1024 ** 2:
-            return f"{file_size_bytes / 1024:.2f} KB"
-        elif file_size_bytes < 1024 ** 3:
-            return f"{file_size_bytes / (1024 ** 2):.2f} MB"
-        else:
-            return f"{file_size_bytes / (1024 ** 3):.2f} GB"
-
-    def prepare_for_display(self, file_name, file_bytes, file_uploadate: date):
-        short_filename = os.path.basename(file_name)
-        formatted_file_size = self.format_file_size(file_bytes)
-
-        short_file_date = file_uploadate.strftime('%B %d, %Y')
-
-        return short_filename, formatted_file_size, short_file_date
-
-    def checked_file_frames(self):
-        checked_file_frames_list = []
-        for file_frame in self.file_frames:
-            if file_frame.get_checkvar():
-                checked_file_frames_list.append(file_frame)
-                file_frame.uncheck()
-
-        return checked_file_frames_list
-
-    def delete_checked_file(self):
-        frames_to_delete = self.checked_file_frames()
-        names_to_delete_lst = [file_frame.get_filename() for file_frame in frames_to_delete]
-
-        self.client_communicator.handle_delete_request_client(names_to_delete_lst)
-        for file_frame in frames_to_delete:
-            file_frame.kill_frame()
-
-        self.file_frame_counter = len(self.file_frames)
-
-    def receive_checked_files(self):
-        select_file_frames = self.checked_file_frames()
-        select_file_names_lst = [file_frame.get_filename() for file_frame in select_file_frames]
-
-        receive_thread = threading.Thread(
-            target=self.client_communicator.handle_download_request_client,
-            args=(select_file_names_lst, self.save_path))
-        receive_thread.start()
-
-    def rename_checked_file(self):
+    def handle_rename_request_client(self):
         try:
-            file_frame = self.checked_file_frames()[0]
+            file_frame = self.get_checked_file_frames()[0]
             old_name = file_frame.get_filename()
 
             file_format = os.path.splitext(old_name)[1]
@@ -392,3 +370,20 @@ class HomePage(ttk.Frame):
                 file_frame.update_idletasks()
         except IndexError:
             pass
+    def handle_delete_request_client(self):
+        frames_to_delete = self.get_checked_file_frames()
+        names_to_delete_lst = [file_frame.get_filename() for file_frame in frames_to_delete]
+
+        self.client_communicator.handle_delete_request_client(names_to_delete_lst)
+        for file_frame in frames_to_delete:
+            file_frame.kill_frame()
+
+        self.file_frame_counter = len(self.file_frames)
+
+
+
+
+
+
+
+

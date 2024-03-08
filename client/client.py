@@ -63,7 +63,7 @@ class ClientCommunication:
         else:
             return answer_flag
 
-    def handle_send_file_request_client(self, file_name, short_filename, short_file_date, file_size):
+    def handle_send_file_request(self, file_name, short_filename, short_file_date, file_size):
         file_content = b''
         with open(file_name, 'rb') as file:
             while True:
@@ -80,9 +80,6 @@ class ClientCommunication:
 
     def handle_download_request_client(self, select_file_names_lst, save_path):
         try:
-            operation_dict = {"FLAG": '<ACTION>', "OPERATION": "<RECV>"}
-            self.send_data(self.client_socket, pickle.dumps(operation_dict))
-
             data_dict = {"FLAG": '<RECV>', "DATA": select_file_names_lst}
             self.send_data(self.client_socket, pickle.dumps(data_dict))
 
@@ -237,7 +234,7 @@ class GroupCommunication:
             if on_broadcast_callback:
                 on_broadcast_callback(received_data)
 
-    def handle_send_file_request_group(self, file_name, short_filename, short_file_date, file_size):
+    def handle_send_file_request(self, file_name, short_filename, short_file_date, file_size):
         file_content = b''
         with open(file_name, 'rb') as file:
             while True:

@@ -217,14 +217,6 @@ class GroupsPage(ttk.Frame):
 
         return checked_file_frames_list
 
-    def add_file_frame(self, group_file_name, group_file_size, group_file_date, group_file_owner):
-        file_frame = GroupFileFrame(self.f_file_list, group_file_name, group_file_size, group_file_date,
-                                    group_file_owner)
-
-        file_frame.pack(expand=True, fill='x', side='top')
-        self.group_file_frames.append(file_frame)
-        self.file_frame_counter += 1
-
     def get_and_destroy_checked_file_names(self, names_to_delete_lst):
         for file_frame in self.group_file_frames:
             filename = file_frame.get_filename()
@@ -232,6 +224,14 @@ class GroupsPage(ttk.Frame):
                 file_frame.kill_frame()
 
         self.file_frame_counter = len(self.group_file_frames)
+
+    def add_file_frame(self, group_file_name, group_file_size, group_file_date, group_file_owner):
+        file_frame = GroupFileFrame(self.f_file_list, group_file_name, group_file_size, group_file_date,
+                                    group_file_owner)
+
+        file_frame.pack(expand=True, fill='x', side='top')
+        self.group_file_frames.append(file_frame)
+        self.file_frame_counter += 1
 
     def get_file_name_to_rename(self, received_data):
         old_name, new_name = received_data
@@ -248,7 +248,7 @@ class GroupsPage(ttk.Frame):
             formatted_file_size = self.set_size_format(size)  # a func from Gui_CAV.py
             self.add_file_frame(name, formatted_file_size, date, owner)  # a func from Gui_CAV.py
 
-    def handle_send_file_request_group(self):
+    def handle_send_file_request(self):
         filetypes = (
             ('All files', '*.*'),
             ('text files', '*.txt'),
@@ -267,7 +267,7 @@ class GroupsPage(ttk.Frame):
             self.set_frame_properties_for_display(file_name, file_bytes, file_date)
 
         send_file_thread = threading.Thread(
-            target=self.group_communicator.handle_send_file_request_client,
+            target=self.group_communicator.handle_send_file_request,
             args=(file_name, short_filename, short_file_date, file_bytes)
         )
         send_file_thread.start()

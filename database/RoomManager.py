@@ -8,12 +8,13 @@ class RoomManager:
         id INTEGER PRIMARY KEY,
         Admin TEXT NOT NULL,
         Name TEXT NOT NULL,
-        Participants TEXT NOT NULL
+        Participants TEXT NOT NULL,
+        Permissions TEXT NOT NULL
     )'''
 
     INSERT_ROOM_QUERY = '''
-        INSERT INTO Rooms (Admin, Name, Participants)
-        VALUES (?, ?, ?);
+        INSERT INTO Rooms (Admin, Name, Participants, Permissions)
+        VALUES (?, ?, ?, ?);
     '''
 
     REMOVE_ROOM_QUERY = '''
@@ -28,9 +29,17 @@ class RoomManager:
         UPDATE Rooms SET Participants = ? WHERE Name = ?;
     '''
 
+    GET_ROOM_ADMIN_QUERY = '''
+        SELECT Admin FROM Rooms WHERE Name = ?;
+    '''
+
     GET_ROOMS_BY_PARTICIPANT_QUERY = '''
-            SELECT Name FROM Rooms WHERE Participants LIKE ?;
-        '''
+        SELECT Name FROM Rooms WHERE Participants LIKE ?;
+    '''
+
+    GET_ROOM_PERMISSIONS_QUERY = '''
+        SELECT Permissions FROM Rooms WHERE Name = ?;
+    '''
 
     def __init__(self, database_path='../database/User_info.db'):
         self.conn = sqlite3.connect(database_path)
@@ -44,8 +53,8 @@ class RoomManager:
         else:
             return self.cur.execute(query).fetchall()
 
-    def insert_room(self, name: str, participants: str, admin: str):
-        self._execute_query(self.INSERT_ROOM_QUERY, (admin, name, participants))
+    def insert_room(self, name: str, participants: str, admin: str, permissions: list):
+        self._execute_query(self.INSERT_ROOM_QUERY, (admin, name, participants, ",".join(permissions)))
         self.conn.commit()
 
     def remove_room(self, name: str):
@@ -72,7 +81,15 @@ class RoomManager:
         except Exception as e:
             print(f"Error in set_room_participants: {e}")
 
+    def get_room_admin(self, room_name):
+        admin = self._execute_query(self.GET_ROOM_ADMIN_QUERY, (room_name,))
+        return admin[0][0] if admin else None
+
     def get_rooms_by_participant(self, user_email):
         query_param = f'%{user_email}%'
         result = self._execute_query(self.GET_ROOMS_BY_PARTICIPANT_QUERY, (query_param,))
+        return [row[0] for row in result]
+
+    def get_room_permissions(self, room_name):
+        result = self._execute_query(self.GET_ROOM_PERMISSIONS_QUERY, (room_name,))
         return [row[0] for row in result]

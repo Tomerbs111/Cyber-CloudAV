@@ -73,7 +73,13 @@ class GroupFiles:
         return self._execute_query(self.GET_FILE_INFO_QUERY, (group_name, self.owner_id, name))
 
     def get_file_data(self, group_name: str, name: str):
-        return self._execute_query(self.GET_FILE_DATA_QUERY, (group_name, self.owner_id, name))
+        result = self._execute_query(self.GET_FILE_DATA_QUERY, (group_name, self.owner_id, name))
+        if result:
+            # Assuming that result is a list containing a single tuple
+            return result[0]
+        else:
+            # Handle the case where no matching records are found
+            return None  # or raise an exception or return a default value
 
     def get_all_files_from_group(self, group_name: str):
         return self._execute_query(self.GET_ALL_FILES_FROM_GROUP_QUERY, (group_name,))
