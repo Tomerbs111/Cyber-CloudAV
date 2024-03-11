@@ -279,7 +279,7 @@ class GroupsPage(ttk.Frame):
         select_file_names_lst = [file_frame.get_filename() for file_frame in select_file_frames]
 
         receive_thread = threading.Thread(
-            target=self.group_communicator.handle_download_request_client,
+            target=self.group_communicator.handle_download_request_group,
             args=(select_file_names_lst,))
         receive_thread.start()
 
@@ -295,7 +295,7 @@ class GroupsPage(ttk.Frame):
         names_to_delete_lst = [file_frame.get_filename() for file_frame in frames_to_delete]
 
         self.delete_thread = threading.Thread(
-            target=self.group_communicator.handle_delete_request_client,
+            target=self.group_communicator.handle_delete_request_group,
             args=(names_to_delete_lst,)
         ).start()
         for file_frame in frames_to_delete:
@@ -318,7 +318,7 @@ class GroupsPage(ttk.Frame):
                 new_name_with_format = f"{new_name}{file_format}"
 
                 rename_thread = threading.Thread(
-                    target=self.group_communicator.handle_rename_request_client,
+                    target=self.group_communicator.handle_rename_request_group,
                     args=((old_name, new_name_with_format),))
                 rename_thread.start()
 
