@@ -1,521 +1,400 @@
-import pickle
-import socket
-import struct
 import threading
-from database.AuthManager import AuthManager
-from database.GroupFiles import GroupFiles
-from database.UserFiles import UserFiles
-from database.RoomManager import RoomManager
+import ttkbootstrap as ttk
+from customtkinter import *
+from PIL import Image, ImageTk
 
-from GroupUser import GroupUser
-from queue import Queue
-
-HOST = '0.0.0.0'
-PORT = 40301
+from GUI.RegistrationApp import RegistrationApp
+from GUI.GroupsPage import GroupsPage
+from GUI.HomePage import HomePage
 
 
-class Server:
-    def __init__(self):
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.bind((HOST, PORT))
-        self.server_socket.listen(5)
-        print(f"Server listening on {HOST}:{PORT}")
+class Page(ttk.Frame):
+    def __init__(self, master, switch_frame, communicator, current_frame):
+        super().__init__(master)
 
-        # Initialize clients list
-        self.clients_list = []
+        self.create_group_top = None
+        self.f_user_groups = None
+        self.group_list_frame = None
+        self.f_options = None
+        self.current_frame = None
+        self.group_menu_frame = None
+        self.master = master
+        self.switch_frame = switch_frame
+        self.communicator = communicator
+        self.current_frame = current_frame
 
-        # Message queue for broadcasting
-        self.file_queue = Queue()
+        self.f_data_center = None
+        self.f_current_page = None
 
-        # Create a thread for broadcasting messages
-        self.broadcast_thread = threading.Thread(target=self.broadcast_files)
-        self.broadcast_thread.start()
+        self.setup_searchbar_frame()
+        self.setup_option_frame()
+        self.setup_data_center_frame()
+        self.setup_current_page_frame()
+        self.setup_groups_segment()
 
-    def send_data(self, client_socket: socket, data: str | bytes):
-        if isinstance(data, str):
-            data = pickle.dumps(data)
+    def setup_searchbar_frame(self):
+        # Code for setting up the Searchbar frame
+        f_searchbar = ttk.Frame(master=self, style="dark")
+        f_searchbar.pack(side="top", fill="x")
 
-        data_len = len(data).to_bytes(4, byteorder='big')
-        client_socket.send(data_len + data)
+        cloudav_image = CTkImage(
+            light_image=Image.open(r"../GUI/file_icons/only_logo.png"),
+            dark_image=Image.open(r"../GUI/file_icons/only_logo.png"),
+            size=(75, 75))
+        cav_image_lbl = CTkLabel(master=f_searchbar, image=cloudav_image, text="")
+        cav_image_lbl.pack(side="left", padx=10)
 
-    def recv_data(self, client_socket: socket):
-        data_len = client_socket.recv(4)
+        search_frame = ttk.Frame(master=f_searchbar, style="dark")
+        search_frame.place(relx=0.5, rely=0.5, anchor='center', relwidth=0.3, relheight=0.5)
 
-        while len(data_len) < 4:
-            data_len += client_socket.recv(4 - len(data_len))
-        len_to_int = int.from_bytes(data_len, byteorder='big')
-        data = client_socket.recv(len_to_int)
+        search_button = ttk.Button(search_frame, text="Search")
+        search_button.pack(side="left", expand=True, fill="x")
 
-        while len(data) < len_to_int:
-            data += client_socket.recv(len_to_int - len(data))
+        search_entry = ttk.Entry(search_frame, width=70)
+        search_entry.pack(side="left", expand=True, fill="x")
 
-        return data
+        # Profile Photo Placeholder on the Right
+        profile_photo_placeholder = ttk.Label(f_searchbar, text="👤", font=("Arial", 30))
+        profile_photo_placeholder.pack(side="right", padx=10)
 
-    def start(self):
+        # Settings Button on the Right
+        settings_button = ttk.Button(f_searchbar, text="Settings")
+        settings_button.pack(side="right", padx=10)
+
+    def setup_data_center_frame(self):
+        # Code for setting up the Data center frame
+        self.f_data_center = ttk.Frame(master=self, style="default")
+        self.f_data_center.place(rely=0.1, relx=0, relheight=0.9, relwidth=1)
+
+    def setup_option_frame(self):
+        # Code for setting up the Option frame
+        self.f_options = ttk.Frame(master=self.f_data_center, style="dark")
+        self.f_options.place(relx=0, y=70, relwidth=0.2, relheight=1)
+
+        CTkButton(
+            self.f_options,
+            text="Add",
+            image=CTkImage(Image.open("../GUI/file_icons/add_file_plus_icon.png"), size=(30, 30)),
+            compound='left',
+            command=self.handle_send_file_request
+        ).pack(side='top', pady=20, anchor='w', padx=10)
+
+        ttk.Separator(self.f_options, orient="horizontal").pack(side='top', fill='x', pady=5, padx=10)
+
+        CTkButton(
+            self.f_options,
+            text="Home",
+            image=CTkImage(Image.open("../GUI/file_icons/home_icon.png"), size=(20, 20)),
+            compound='left',
+            command=self.switch_to_home_page
+        ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
+
+        CTkButton(
+            self.f_options,
+            text="Shared",
+            image=CTkImage(Image.open("../GUI/file_icons/shared_icon.png"), size=(20, 20)),
+            compound='left'
+        ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
+
+        CTkButton(
+            self.f_options,
+            text="Favorites",
+            image=CTkImage(Image.open("../GUI/file_icons/star_icon.png"), size=(20, 20)),
+            compound='left',
+        ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
+
+        CTkButton(
+            self.f_options,
+            text="Recycle bin",
+            image=CTkImage(Image.open("../GUI/file_icons/trash_icon.png"), size=(20, 20)),
+            compound='left'
+        ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
+
+        CTkButton(
+            self.f_options,
+            text="Log out",
+            image=CTkImage(Image.open("../GUI/file_icons/log_out_icon.png"), size=(20, 20)),
+            compound='left'
+        ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
+
+        self.group_menu_frame = ttk.Frame(self.f_options, style="dark")
+
+    def setup_current_page_frame(self):
+        self.f_current_page = ttk.Frame(master=self.f_data_center, style="info")
+        self.f_current_page.place(relx=0.21, rely=0.02, relwidth=0.78, relheight=0.96)
+
+    def setup_groups_segment(self):
+        ttk.Separator(self.f_options, orient="horizontal").pack(side='top', fill='x', pady=5, padx=10)
+
+        self.group_menu_frame.pack(side='top', fill='x')
+        CTkLabel(self.group_menu_frame, text="Your groups:", font=('Arial', 12)).pack(padx=10, fill='x', side='left')
+
+        CTkButton(
+            self.group_menu_frame,
+            text="Create new group",
+            command=self.handle_create_group_window
+        ).pack(side='left', pady=5, fill='x', padx=10)
+
+    def switch_to_groups_page(self, group_name, permissions):
+        if self.current_frame.__class__.__name__ != "GroupsPage":
+            print(f"Switching to {group_name}")
+            self.switch_frame("GroupsPage", self.communicator, group_name, permissions)
+            threading.Thread(target=self.current_frame.group_communicator.handle_join_group_request,
+                             args=(group_name,)).start()
+
+        elif self.current_frame.group_name != group_name:
+            threading.Thread(target=self.current_frame.group_communicator.handle_leave_group_request).start()
+            print(f"Switching to {group_name}")
+            self.switch_frame("GroupsPage", self.communicator, group_name, permissions)
+            threading.Thread(target=self.current_frame.group_communicator.handle_join_group_request,
+                             args=(group_name,)).start()
+
+    def switch_to_home_page(self):
+        if self.current_frame.__class__.__name__ == "GroupsPage":
+            threading.Thread(target=self.current_frame.group_communicator.handle_leave_group_request).start()
+        if self.current_frame.__class__.__name__ != "HomePage":
+            print("Switching to home page")
+            self.switch_frame("HomePage", self.communicator)
+
+    def handle_send_file_request(self):
+        threading.Thread(target=self.current_frame.handle_send_file_request).start()
+
+    def handle_create_group_window(self):
+        if self.create_group_top is None or not self.create_group_top.winfo_exists():
+            try:
+                all_user_list = self.communicator.get_all_registered_users()
+            except:
+                return None
+            self.create_group_top = CreateGroupWin(self, all_user_list)
+
+            self.create_group_top.wait_window()
+
+            group_name = self.create_group_top.selected_name
+            submitted_participants = self.create_group_top.submitted_participants
+            permissions = self.create_group_top.permissions_answers
+
+            threading.Thread(target=self.communicator.handle_create_group_request,
+                             args=(group_name, submitted_participants, permissions,)
+                             ).start()
+
+            if group_name and submitted_participants:
+                CTkButton(
+                    self.f_options,
+                    text=group_name,
+                    compound='left',
+                    fg_color="transparent",
+                    command=lambda button_text=group_name: self.switch_to_groups_page(button_text, permissions)
+
+                ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
+
+    def get_group_names(self):
+        rooms_dict = self.communicator.get_all_groups()
         try:
-            while True:
-                client_socket, client_address = self.server_socket.accept()
-                print(f"Accepted connection from {client_address}")
+            print(rooms_dict)
 
-                identifier = None
-
-                client_register_login_handler = threading.Thread(
-                    target=self.handle_register_login,
-                    args=(client_socket, identifier)
-                )
-                client_register_login_handler.start()
-
-        except KeyboardInterrupt:
-            print("Server terminated by user.")
-        except Exception as e:
-            print(f"Unexpected error in server start: {e}")
-        finally:
-            self.server_socket.close()
-
-    def handle_register_login(self, client_socket, identifier):
-        try:
-            while True:
-                received_data = pickle.loads(self.recv_data(client_socket))
-                authentication_flag = received_data.get("FLAG")
-                field_dict = received_data.get("DATA")
-                db_authentication = AuthManager()
-
-                if authentication_flag == "<REGISTER>":
-                    u_email = field_dict['email']
-                    u_username = field_dict['username']
-                    u_password = field_dict['password']
-
-                    answer_to_send = self.handle_register_info(u_email, u_username, u_password, db_authentication)
-
-                elif authentication_flag == "<LOGIN>":
-                    u_email = field_dict['email']
-                    u_password = field_dict['password']
-
-                    answer_to_send = self.handle_login_info(u_email, u_password, db_authentication)
-
-                self.send_data(client_socket, pickle.dumps(answer_to_send))
-                if answer_to_send.get("FLAG") == "<SUCCESS>":
-                    identifier = answer_to_send.get("DATA")
-
-                if identifier:
-                    # Start a new thread to handle the client
-                    client_handler = threading.Thread(
-                        target=self.handle_requests,
-                        args=(client_socket, identifier)
-                    )
-
-                    client_handler.start()
-                    break  # Break out of the inner loop if registration or login is successful
-
-        except (socket.error, IOError) as e:
-            print(f"Error in handle_register_login: {e}")
-            client_socket.close()
-
-    def broadcast_files(self):
-        try:
-            while True:
-                # Get a message from the queue
-                queued_data = self.file_queue.get()
-
-                # Unpack the message to get the client socket and the file data
-                sender_socket, file_data = queued_data
-
-                # Broadcast the message to all connected clients except the sender
-                for g_users in self.clients_list:
-                    try:
-                        if g_users.user_socket != sender_socket:
-                            self.send_data(g_users.user_socket, pickle.dumps(file_data))
-                    except Exception as e:
-                        print(f"Error in broadcast_files: {e}")
-
-        except Exception as e:
-            print(f"Error in broadcast_files thread: {e}")
-
-    def handle_register_info(self, u_email, u_username, u_password, auth):
-        try:
-            db_answer = auth.register(u_email, u_username, u_password)
-
-            # Create a dictionary with "FLAG" and "DATA" keys
-            answer_to_send = {"FLAG": db_answer, "DATA": None}
-
-            if db_answer == "<EXISTS>":
-                answer_to_send["DATA"] = "Email already exists"
-            elif db_answer == "<SUCCESS>":
-                userid = auth.get_userid(u_email)
-                answer_to_send["DATA"] = userid[0]
-
-            return answer_to_send
-
-        except Exception as e:
-            answer_to_send["FLAG"] = "<FAILED>"
-            answer_to_send["DATA"] = f"Unexpected error during registration: {e}"
-            return answer_to_send
-
-    def handle_login_info(self, u_email, u_password, auth):
-        try:
-            db_answer = auth.login(u_email, u_password)
-
-            # Create a dictionary with "FLAG" and "DATA" keys
-            answer_to_send = {"FLAG": None, "DATA": None}
-
-            if db_answer == "<NO_EMAIL_EXISTS>":
-
-                answer_to_send["FLAG"] = "<NO_EMAIL_EXISTS>"
-                answer_to_send["DATA"] = "Email doesn't exist"
-
-            elif db_answer == "<WRONG_PASSWORD>":
-                answer_to_send["FLAG"] = "<WRONG_PASSWORD>"
-                answer_to_send["DATA"] = "Wrong password"
-
-            else:
-                userid = auth.get_userid(u_email)
-                answer_to_send["FLAG"] = "<SUCCESS>"
-                answer_to_send["DATA"] = userid[0]
-
-            return answer_to_send
-
-        except Exception as e:
-            answer_to_send["FLAG"] = "<FAILED>"
-            answer_to_send["DATA"] = f"Unexpected error during login: {e}"
-            return answer_to_send
-
-    def handle_requests(self, client_socket, identifier):
-        try:
-            user_files_manager = UserFiles(identifier)
-
-            while True:
-                action = None
-                received_data = pickle.loads(self.recv_data(client_socket))
-                if received_data.get("FLAG") == "<ACTION>":
-                    action = received_data.get("OPERATION")
-
-                if received_data.get("FLAG") == "<NARF>":
-                    self.handle_narf_action(client_socket, user_files_manager)
-
-                elif action == "X":
-                    self.handle_sign_out_action(identifier)
-                    break
-
-                elif received_data.get("FLAG") == "<SEND>":
-                    send_data = received_data.get("DATA")
-                    self.handle_save_file_action(client_socket, user_files_manager, send_data)
-
-                elif received_data.get("FLAG") == "<RECV>":
-                    recv_data = received_data.get("DATA")
-                    self.handle_read_files_action(client_socket, user_files_manager, recv_data)
-
-                elif received_data.get("FLAG") == "<DELETE>":
-                    delete_data = received_data.get("DATA")
-                    self.handle_delete_action(client_socket, user_files_manager, delete_data)
-
-                elif received_data.get("FLAG") == "<RENAME>":
-                    rename_data = received_data.get("DATA")
-                    self.handle_rename_action(client_socket, user_files_manager, rename_data)
-
-                elif received_data.get("FLAG") == "<FAVORITE>":
-                    favorite_data = received_data.get("DATA")
-                    self.handle_favorite_action(client_socket, user_files_manager, favorite_data)
-
-                elif received_data.get("FLAG") == "<UNFAVORITE>":
-                    unfavorite_data = received_data.get("DATA")
-                    self.handle_unfavorite_action(client_socket, user_files_manager, unfavorite_data)
-
-                elif received_data.get("FLAG") == "<GET_USERS>":
-                    self.handle_get_users_action(client_socket, identifier)
-
-                elif received_data.get("FLAG") == "<CREATE_GROUP>":
-                    create_group_data = received_data.get("DATA")
-                    self.handle_create_group_action(client_socket, identifier, create_group_data)
-
-                elif received_data.get("FLAG") == "<GET_ROOMS>":
-                    self.handle_get_rooms_action(client_socket, identifier)
-
-                elif received_data.get("FLAG") == "<JOIN_GROUP>":
-                    join_group_data = received_data.get("DATA")
-                    self.handle_join_group_action(client_socket, identifier, join_group_data)
-                    break
-
-        except (socket.error, IOError) as e:
-            print(f"Error in handle_requests: {e}")
-            client_socket.close()
-
-    def handle_group_requests(self, client_socket: socket, identifier):
-        try:
-            group_manager = GroupFiles(AuthManager().get_email(identifier))
-
-            while True:
-                action = None
-                received_data = pickle.loads(self.recv_data(client_socket))
-                if received_data.get("FLAG") == "<ACTION>":
-                    action = received_data.get("OPERATION")
-
-                if received_data.get("FLAG") == "<NARF>":
-                    self.handle_narf_action(client_socket, group_manager)
-
-                elif received_data.get("FLAG") == "<RECV>":
-                    recv_data = received_data.get("DATA")
-                    self.handle_read_files_action(client_socket, group_manager, recv_data)
-
-                elif received_data.get("FLAG") == "<SEND>":
-                    send_data = received_data.get("DATA")
-                    self.handle_save_file_action(client_socket, group_manager, send_data)
-
-                elif received_data.get("FLAG") == "<DELETE>":
-                    delete_data = received_data.get("DATA")
-                    self.handle_delete_action(client_socket, group_manager, delete_data)
-
-                elif received_data.get("FLAG") == "<RENAME>":
-                    rename_data = received_data.get("DATA")
-                    self.handle_rename_action(client_socket, group_manager, rename_data)
-
-                elif received_data.get("FLAG") == "<CREATE_GROUP>":
-                    create_group_data = received_data.get("DATA")
-                    self.handle_create_group_action(client_socket, identifier, create_group_data)
-
-                elif received_data.get("FLAG") == "<LEAVE_GROUP>":
-                    self.handle_leave_group_action(client_socket, identifier)
-                    break
-
-        except (socket.error, IOError) as e:
-            print(f"Error in handle_group_requests: {e}")
-            client_socket.close()
-
-    def handle_narf_action(self, client_socket, db_manager):
-        try:
-            saved_file_prop_lst = None
-            if isinstance(db_manager, GroupFiles):
-                group_name = self.get_group_name(client_socket)
-                saved_file_prop_lst = db_manager.get_all_files_from_group(group_name)
-
-            elif isinstance(db_manager, UserFiles):
-                saved_file_prop_lst = db_manager.get_all_data()
-
-            data_to_send = {"FLAG": "<NARF>", "DATA": saved_file_prop_lst}
-
-            self.send_data(client_socket, pickle.dumps(data_to_send))
+            for room, permissions in rooms_dict.items():
+                CTkButton(
+                    self.f_options,
+                    text=room,
+                    compound='left',
+                    fg_color="transparent",
+                    command=lambda button_text=room: self.switch_to_groups_page(button_text, permissions)
+                ).pack(side='top', pady=5, anchor='w', fill='x', padx=10)
 
         except Exception as e:
-            print(f"Error in handle_narf_action: {e}")
-            client_socket.close()
+            print(f"Error in get_group_names: {e}")
+            # Handle errors accordingly
 
-    def handle_sign_out_action(self, identifier):
-        print(f"User {identifier} has signed out.")
 
-    def handle_save_file_action(self, client_socket, db_manager, all_file_content):
-        try:
-            file_name = all_file_content[0]
-            file_size = all_file_content[1]
-            file_date = all_file_content[2]
-            file_bytes = all_file_content[3]
+class CreateGroupWin(CTkToplevel):
+    def __init__(self, master, participant_names):
 
-            if isinstance(db_manager, GroupFiles):
-                group_name = self.get_group_name(client_socket)
-                db_manager.insert_file(file_name, file_size, file_date, group_name, file_bytes)
+        super().__init__(master)
+        self.geometry("500x670")
+        self.title("Create New Group")
 
-                file_info = self.get_file_info(db_manager, group_name, file_name)
-                queued_info = {"FLAG": "<SEND>", "DATA": file_info}
+        self.group_name = StringVar(value="")
 
-                self.file_queue.put((client_socket, queued_info))
+        self.selected_participants = {}
+        self.participant_names = participant_names
+        self.selected_name = None
+        self.group_name_error_label = None
+        self.participants_error_label = None
+        self.submitted_participants = None
 
-            elif isinstance(db_manager, UserFiles):
-                db_manager.insert_file(file_name, file_size, file_date, file_bytes)
+        ttk.Label(self, text="Create your shared file group", font=("Calibri bold", 22)
+                  ).pack(anchor='w', padx=5, pady=15, fill='x')
 
-            print(f"File '{file_name}' received and saved in the database")
+        self.setup_group_name_entry()
+        self.setup_participants_list()
+        self.setup_permissions()  # Fixed method name
+        self.setup_buttons()
 
-        except Exception as e:
-            print(f"Error in handle_save_file_action: {e}")
-            client_socket.close()
+    def setup_group_name_entry(self):
+        container = CTkFrame(self)
+        container.pack(fill="both", expand=True, padx=5, pady=5)
+        CTkLabel(container, text="Group Name:").pack(anchor='w', padx=10, pady=5)
+        self.group_name_entry = CTkEntry(container, textvariable=self.group_name, width=200)
+        self.group_name_entry.pack(anchor='w', padx=10)
 
-    def handle_read_files_action(self, client_socket, db_manager, select_file_names_lst):
-        try:
-            file_data_name_dict = {}
-            if isinstance(db_manager, GroupFiles):
-                for individual_file in select_file_names_lst:
-                    file_data = db_manager.get_file_data(self.get_group_name(client_socket), individual_file)[0]
-                    file_data_name_dict[individual_file] = file_data
+        # Error label for Group Name entry
+        self.group_name_error_label = CTkLabel(container, text="", text_color="red")
+        self.group_name_error_label.pack(anchor='w', padx=10)
 
-            elif isinstance(db_manager, UserFiles):
-                for individual_file in select_file_names_lst:
-                    file_data = db_manager.get_file_data(individual_file)[0]
-                    file_data_name_dict[individual_file] = file_data
+    def setup_permissions(self):
+        permission_frame = CTkFrame(self)
+        permission_frame.pack(fill="both", expand=True, padx=5, pady=5)
 
-            data_dict = {"FLAG": '<RECV>', "DATA": file_data_name_dict}
-            self.send_data(client_socket, pickle.dumps(data_dict))
+        ttk.Label(permission_frame, text="Permissions:").pack(anchor='w', padx=10, pady=5)
 
-            print("Files sent successfully.")
+        # Create a frame to organize switches in rows
+        switches_frame = CTkFrame(permission_frame)
+        switches_frame.pack(fill='both', expand=True, padx=5, pady=5)
 
-        except Exception as e:
-            print(f"Error in handle_read_files_action: {e}")
+        # Create two switches in each row
+        self.upload_permission = CTkSwitch(switches_frame, text="Upload Data")
+        self.upload_permission.pack(side='left', padx=5)
 
-    def handle_delete_action(self, client_socket, db_manager, select_file_names_lst):
-        try:
-            if isinstance(db_manager, GroupFiles):
-                for individual_file in select_file_names_lst:
-                    db_manager.delete_file(self.get_group_name(client_socket), individual_file)
-                    queued_info = {"FLAG": "<DELETE>", "DATA": individual_file}
+        self.download_permission = CTkSwitch(switches_frame, text="Download Data")
+        self.download_permission.pack(side='left', padx=5)
 
-                    self.file_queue.put((client_socket, queued_info))
+        # Create a new row for the next set of switches
+        switches_frame = CTkFrame(permission_frame)
+        switches_frame.pack(fill='both', expand=True, padx=5, pady=5)
 
-            elif isinstance(db_manager, UserFiles):
-                for individual_file in select_file_names_lst:
-                    db_manager.delete_file(individual_file)
-            print("Files deleted successfully.")
+        self.rename_permission = CTkSwitch(switches_frame, text="Rename Data")
+        self.rename_permission.pack(side='left', padx=5)
 
-        except Exception as e:
-            print(f"Error in handle_delete_action: {e}")
-            client_socket.close()
+        self.delete_permission = CTkSwitch(switches_frame, text="Delete Data")
+        self.delete_permission.pack(side='left', padx=5)
 
-    def handle_rename_action(self, client_socket, db_manager, rename_data):
-        try:
-            old_name, new_name = rename_data
+    def setup_participants_list(self):
+        participants_list = CTkScrollableFrame(self, label_anchor="w", label_text="Participants:",
+                                               label_fg_color='transparent')
+        participants_list.pack(fill="both", expand=True, padx=5)
 
-            if isinstance(db_manager, GroupFiles):
-                group_name = self.get_group_name(client_socket)
-                db_manager.rename_file(group_name, old_name, new_name)
-                queued_info = {"FLAG": "<RENAME>", "DATA": rename_data}
+        for name in self.participant_names:
+            participant_var = ttk.StringVar(value="off")
+            self.selected_participants[name] = participant_var
 
-                self.file_queue.put((client_socket, queued_info))
+            participants_container = CTkFrame(participants_list)
+            participants_container.pack(fill='x', expand=True)
 
-            elif isinstance(db_manager, UserFiles):
-                db_manager.rename_file(old_name, new_name)
+            # Checkbutton for participant selection
+            checkbox = ttk.Checkbutton(participants_container, text="", variable=participant_var,
+                                       onvalue="on", offvalue="off")
+            checkbox.pack(side='left', padx=5, pady=5)
 
-            print("File renamed successfully.")
+            # Label for participant name
+            participant_label = ttk.Label(participants_container, text=name)
+            participant_label.pack(anchor='w', fill='x', expand=True, pady=5)
 
-        except Exception as e:
-            print(f"Error in handle_rename_action: {e}")
-            client_socket.close()
+        # Error label for Participants list
+        self.participants_error_label = CTkLabel(participants_list, text="", text_color="red")
+        self.participants_error_label.pack(anchor='w', padx=5, pady=5)
 
-    def handle_favorite_action(self, client_socket, user_files_manager, favorite_file_name):
-        try:
-            user_files_manager.set_favorite_status(favorite_file_name, 1)
-            print("File favorited successfully.")
-        except Exception as e:
-            print(f"Error in handle_favorite_action: {e}")
-            client_socket.close()
+    def setup_buttons(self):
+        container = CTkFrame(self, bg_color='transparent')
+        container.pack(fill="x", expand=True, padx=5, pady=5, side="bottom")
 
-    def handle_unfavorite_action(self, client_socket, user_files_manager, unfavorite_file_name):
-        try:
-            user_files_manager.set_favorite_status(unfavorite_file_name, 0)
-            print("File unfavorited successfully.")
-        except Exception as e:
-            print(f"Error in handle_unfavorite_action: {e}")
-            client_socket.close()
+        submit_button = CTkButton(container, text="Submit", width=20, command=self.on_submit)
+        submit_button.pack(side="left", padx=5)
 
-    def handle_get_users_action(self, client_socket, identifier):
-        all_users = AuthManager().get_all_users(identifier)
-        data_to_send = {"FLAG": "<GET_USERS>", "DATA": all_users}
-        self.send_data(client_socket, pickle.dumps(data_to_send))
+        cancel_button = CTkButton(container, text="Cancel", width=20, command=self.on_cancel)
+        cancel_button.pack(side="left", padx=5)
 
-    def handle_create_group_action(self, client_socket, identifier, group_data):
-        user_email = AuthManager().get_email(identifier)
+    def on_submit(self):
+        # Clear previous error messages
+        self.group_name_error_label.configure(text="")
+        self.participants_error_label.configure(text="")
 
-        group_name = group_data[0]
-        group_participants = group_data[1]
-        group_participants.append(user_email)
-        group_permissions = group_data[2]
-        permission_values = []
+        # Validate Group Name
+        group_name = self.group_name.get()
+        if not group_name:
+            self.group_name_error_label.configure(text="Please enter a group name.")
+            return
 
-        for permission in group_permissions:
-            permission_values.append(str(group_permissions[permission]))
+        self.selected_name = group_name
+        # Validate at least one participant is selected
+        self.submitted_participants = [name for name, var in self.selected_participants.items() if var.get() == "on"]
+        if not self.submitted_participants:
+            self.participants_error_label.configure(text="Please select at least one participant.")
+            return
 
-        print(permission_values)
+        self.permissions_answers = {
+            "Upload Data": self.upload_permission.get(),
+            "Download Data": self.download_permission.get(),
+            "Rename Data": self.rename_permission.get(),
+            "Delete Data": self.delete_permission.get()
+        }
 
-        # Create a room in the database using RoomManager
-        room_manager = RoomManager()
-        room_manager.insert_room(group_name, ",".join(group_participants), user_email, permission_values)
-        print(f"Group created successfully.")
+        print(f"Group Name: {self.selected_name}")
+        print(f"Selected Participants: {self.submitted_participants}")
+        print(f"Permissions: {self.permissions_answers}")
+        self.destroy()
 
-    def handle_get_rooms_action(self, client_socket, identifier):
-        try:
-            user_email = AuthManager().get_email(identifier)
-            room_manager = RoomManager()
+    def on_cancel(self):
+        self.destroy()
 
-            rooms_containing_user = room_manager.get_rooms_by_participant(user_email)
 
-            # Create a dictionary with room names as keys and permissions as values
-            rooms_dict = {}
-            for room in rooms_containing_user:
-                room_permissions = room_manager.get_room_permissions(room)
-                rooms_dict[room] = room_permissions
+class MyApp(ttk.Window):
+    def __init__(self, client_communicator, group_communicator):
+        super().__init__(themename="darkly")
+        self.geometry("1150x710")
+        self.title("Cloud-AV")
 
-            # Pickle and send the dictionary over the socket
-            data_to_send = {"FLAG": "<GET_ROOMS>", "DATA": rooms_dict}
-            self.send_data(client_socket, pickle.dumps(data_to_send))
+        self.current_frame = None
+        self.loaded = False
+        self.client_communicator = client_communicator
+        self.group_communicator = group_communicator
+        self.page = Page(self, self.switch_frame, self.client_communicator, self.current_frame)
 
-            print(f"Sent rooms containing {user_email} to the client.")
+        self.switch_frame("RegistrationApp", self.client_communicator)
 
-        except Exception as e:
-            print(f"Error in fetch_rooms_for_user: {e}")
-            client_socket.close()
+    def switch_frame(self, frame_class, *args):
+        if frame_class == "RegistrationApp":
+            new_frame = RegistrationApp(self, self.switch_frame, self.client_communicator)
 
-    def is_user_admin(self, username, group_name):
-        try:
-            room_manager = RoomManager()
-            admin_email = room_manager.get_room_admin(group_name)
+            if self.current_frame:
+                self.current_frame.pack_forget()
 
-            if admin_email == AuthManager().get_email(username):
-                return True
-            else:
-                return False
+            new_frame.pack(fill="both", expand=True)
+            self.current_frame = new_frame
 
-        except Exception as e:
-            print(f"Error in is_user_admin: {e}")
-            return False
+        elif frame_class == "GroupsPage":
+            new_frame = GroupsPage(self.page.f_current_page, self.switch_frame, self.group_communicator,
+                                   group_name=args[0], permissions=args[1])
 
-    def handle_join_group_action(self, client_socket, identifier, group_name):
-        try:
-            user_email = AuthManager().get_email(identifier)
+            if self.current_frame:
+                self.current_frame.pack_forget()
 
-            # Check if the user is already in the clients_list with a different group name
-            user_found = False
-            for group_user in self.clients_list:
-                if group_user.user_socket == client_socket:
-                    if group_user.group_name != group_name:
-                        group_user.group_name = group_name  # Change the group_name to the new one
-                    user_found = True
-                    break
+            self.page.pack(fill="both", expand=True)
+            new_frame.pack(fill="both", expand=True)
 
-            if not user_found:
-                # If the user is not in the list, append with the received group name
-                self.clients_list.append(GroupUser(client_socket, user_email, group_name))
+            self.page.current_frame = new_frame
+            self.current_frame = new_frame
 
-            self.send_data(client_socket, pickle.dumps({"FLAG": "<JOINED>"}))
-            print(f"User {user_email} joined the group '{group_name}'.")
+            new_frame.set_handle_broadcast_requests_function()
 
-            group_handler = threading.Thread(
-                target=self.handle_group_requests,
-                args=(client_socket, identifier)
-            )
-            group_handler.start()
+        elif frame_class == "HomePage":
+            new_frame = HomePage(self.page.f_current_page, self.switch_frame, self.client_communicator)
 
-        except Exception as e:
-            print(f"Error in handle_join_group_action: {e}")
-            client_socket.close()
+            if self.current_frame:
+                self.current_frame.pack_forget()
 
-    def handle_leave_group_action(self, client_socket, identifier):
-        try:
-            for group_user in self.clients_list:
-                if group_user.user_socket == client_socket:
-                    self.clients_list.remove(group_user)
-                    break
-            self.send_data(client_socket, pickle.dumps({"FLAG": "<LEFT>"}))
-            client_handler = threading.Thread(
-                target=self.handle_requests,
-                args=(client_socket, identifier)
-            )
-            client_handler.start()
+            self.page.pack(fill="both", expand=True)
+            new_frame.pack(fill="both", expand=True)
 
-        except Exception as e:
-            print(f"Error in handle_leave_group_action: {e}")
-            client_socket.close()
+            self.page.current_frame = new_frame
+            self.current_frame = new_frame
 
-    def get_file_info(self, group_manager, group_name, filename):
-        return group_manager.get_file_info(group_name, filename)
+            if not self.loaded:
+                self.page.after(500, self.page.get_group_names)
+                self.loaded = True
 
-    def get_group_name(self, client_socket):
-        for index, group_user in enumerate(self.clients_list):
-            if group_user.user_socket == client_socket:
-                return group_user.group_name
+
 if __name__ == "__main__":
-    server = Server()
-    server.start()
+    client_communicator = None
+    group_communicator = None
+    app = MyApp(client_communicator, group_communicator)
+    app.mainloop()

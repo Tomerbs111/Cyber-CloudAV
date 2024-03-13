@@ -22,62 +22,60 @@ class TwoFactorAuthentication(CTkToplevel):
         self.password = password
         self.email = email
 
+        self.setup_image()
         self.setup_information()
-        self.setup_code_area()
+        self.setup_verification_code_frame()
         self.setup_submit_button()
-        self.setup_video_frame()
 
-    def setup_video_frame(self):
-        container = ttk.Frame(master=self)
-        container.pack(side="top", fill="both", padx=20, pady=20)
-
-        video_label = ttk.Label(container)
-        video_label.place(relx=0, rely=0, relwidth=1, relheight=1)
-        script_directory = os.path.dirname(os.path.realpath(__file__))
-        video_path = r"C:\Users\shoon\OneDrive - פורטל החינוך פתח תקווה\שולחן העבודה\Cyber-CloudAV\GUI\file_icons\video_2fa.mp4"
-
-        # Create an instance of tkvideo
-        video_player = tkvideo(video_path, video_label, loop=1, size=(900, 900))
-
-        # Set the video file path
-        video_player.play()
+    def setup_image(self):
+        container = tk.Frame(master=self)
+        container.pack(side="top", padx=20)
+        two_fa_image = CTkImage(
+            light_image=Image.open(r"GUI\file_icons\2fa_image.jpg"),
+            dark_image=Image.open(r"GUI\file_icons\2fa_image.jpg"),
+            size=(251, 173)
+        )
+        image_label = CTkLabel(container, image=two_fa_image, text="", bg_color='transparent')
+        image_label.pack(side="top", fill="both", expand=True)
 
     def setup_information(self):
-        container = ttk.Frame(master=self)
-        container.pack(side="top", fill="both", padx=20, pady=20)
-        ttk.Label(container, text="Two-Factor Authentication").pack(side="top", anchor="center", pady=30)
-        ttk.Label(container, text="Enter the six-digit code we have sent to your email").pack(side="top",
+        container = CTkFrame(master=self)
+        container.pack(side="top", fill="both", padx=20)
+        CTkLabel(container, text="Two-Factor\nAuthentication", font=("Arial Bold", 30), bg_color='transparent').pack(side="top", anchor="center", pady=30)
+        CTkLabel(container, text="Enter the six-digit code we have sent to your email", font=("Helvetica", 12), bg_color='transparent').pack(side="top",
                                                                                               anchor="center", pady=10)
 
-    def setup_code_area(self):
-        code_frame = ttk.Frame(self)
-        code_frame.pack(side="top", fill="both", padx=20, pady=20)
+    def setup_verification_code_frame(self):
+        code_frame = CTkFrame(self)
+        code_frame.pack(side="top", fill="both", padx=20, pady=20, expand=True)
 
         self.code_entries = []
         for i in range(6):
-            entry = ttk.Entry(code_frame, width=3, font=("Helvetica", 20), justify="center")
-            entry.grid(row=0, column=i, padx=(5, 5))
+            digit_entry = CTkEntry(code_frame, width=50, height=50, font=("Helvetica", 20), justify="center")
+            digit_entry.pack(side="left", padx=15, expand=True)
 
-            # Bind the <Key> event to move the focus to the next entry widget
-            entry.bind('<Key>', lambda event, entry=entry, index=i: self.on_key(event, entry, index))
+            # Bind the <Key> event to move the focus to the next digit_entry widget
+            digit_entry.bind('<Key>', lambda event, entry=digit_entry, index=i: self.on_key(event, entry, index))
 
-            self.code_entries.append(entry)
+            self.code_entries.append(digit_entry)
 
     def on_key(self, event, entry, index):
         if event.char.isdigit() and index < 5:
             self.code_entries[index + 1].focus_set()
 
-    def setup_submit_button(self):
-        container_frame = ttk.Frame(self)
-        container_frame.pack(side="bottom", fill="both", padx=20, pady=20)
-        submit_button = ttk.Button(container_frame, text="Submit", command=self.on_submit)
-        submit_button.pack(side="top", pady=10)
+        if index == 5:
+            self.on_submit()
 
-        self.answer_label = CTkLabel(container_frame, text="Checking", text_color="red")
-        self.answer_label.pack(side="bottom", pady=10)
+    def setup_submit_button(self):
+        container_frame = CTkFrame(self)
+        container_frame.pack(side="bottom", fill="both", padx=20, pady=20)
+        submit_button = CTkButton(container_frame, text="Verify", command=self.on_submit, font=("Helvetica", 20))
+        submit_button.pack(side="top", pady=10, anchor="center", fill='x', padx=10)
+
+        self.answer_label = CTkLabel(container_frame, text="", text_color="red")
 
     def on_submit(self):
-        pass
+        print("Submitting code")
 
 
 def run_test():
