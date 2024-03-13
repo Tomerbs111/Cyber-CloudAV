@@ -26,50 +26,47 @@ class Page(ttk.Frame):
         self.f_data_center = None
         self.f_current_page = None
 
-        self.setup_searchbar_frame()
-        self.setup_option_frame()
         self.setup_data_center_frame()
+        self.setup_option_frame()
+        self.setup_searchbar_frame()
         self.setup_current_page_frame()
         self.setup_groups_segment()
 
     def setup_searchbar_frame(self):
         # Code for setting up the Searchbar frame
-        f_searchbar = ttk.Frame(master=self, style="dark")
-        f_searchbar.pack(side="top", fill="x")
+        f_searchbar = ttk.Frame(master=self.f_data_center, style="dark")
+        f_searchbar.pack(side="top", fill="both")
+
+        search_button = ttk.Button(f_searchbar, text="Search")
+        search_button.pack(side="left", pady=15)
+
+        search_entry = ttk.Entry(f_searchbar, width=70)
+        search_entry.pack(side="left", pady=15)
+
+        # Profile Photo Placeholder on the Right
+        profile_photo_placeholder = ttk.Label(f_searchbar, text="👤", font=("Arial", 30))
+        profile_photo_placeholder.pack(side="right", padx=10, pady=15)
+
+        # Settings Button on the Right
+        settings_button = ttk.Button(f_searchbar, text="Settings")
+        settings_button.pack(side="right", padx=10, pady=15)
+
+    def setup_data_center_frame(self):
+        # Code for setting up the Data center frame
+        self.f_data_center = ttk.Frame(master=self, style="default")
+        self.f_data_center.pack(side="top", fill="both", expand=True)
+
+    def setup_option_frame(self):
+        # Code for setting up the Option frame
+        self.f_options = ttk.Frame(master=self.f_data_center, style="dark")
+        self.f_options.pack(side="left", fill="y")
 
         cloudav_image = CTkImage(
             light_image=Image.open(r"../GUI/file_icons/only_logo.png"),
             dark_image=Image.open(r"../GUI/file_icons/only_logo.png"),
             size=(75, 75))
-        cav_image_lbl = CTkLabel(master=f_searchbar, image=cloudav_image, text="")
-        cav_image_lbl.pack(side="left", padx=10)
-
-        search_frame = ttk.Frame(master=f_searchbar, style="dark")
-        search_frame.place(relx=0.5, rely=0.5, anchor='center', relwidth=0.3, relheight=0.5)
-
-        search_button = ttk.Button(search_frame, text="Search")
-        search_button.pack(side="left", expand=True, fill="x")
-
-        search_entry = ttk.Entry(search_frame, width=70)
-        search_entry.pack(side="left", expand=True, fill="x")
-
-        # Profile Photo Placeholder on the Right
-        profile_photo_placeholder = ttk.Label(f_searchbar, text="👤", font=("Arial", 30))
-        profile_photo_placeholder.pack(side="right", padx=10)
-
-        # Settings Button on the Right
-        settings_button = ttk.Button(f_searchbar, text="Settings")
-        settings_button.pack(side="right", padx=10)
-
-    def setup_data_center_frame(self):
-        # Code for setting up the Data center frame
-        self.f_data_center = ttk.Frame(master=self, style="default")
-        self.f_data_center.place(rely=0.1, relx=0, relheight=0.9, relwidth=1)
-
-    def setup_option_frame(self):
-        # Code for setting up the Option frame
-        self.f_options = ttk.Frame(master=self.f_data_center, style="dark")
-        self.f_options.place(relx=0, rely=0.1, relwidth=0.2, relheight=1)
+        cav_image_lbl = CTkLabel(master=self.f_options, image=cloudav_image, text="")
+        cav_image_lbl.pack(side="top", padx=10)
 
         CTkButton(
             self.f_options,
@@ -121,7 +118,7 @@ class Page(ttk.Frame):
 
     def setup_current_page_frame(self):
         self.f_current_page = ttk.Frame(master=self.f_data_center, style="info")
-        self.f_current_page.place(relx=0.21, rely=0.02, relwidth=0.78, relheight=0.96)
+        self.f_current_page.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
     def setup_groups_segment(self):
         ttk.Separator(self.f_options, orient="horizontal").pack(side='top', fill='x', pady=5, padx=10)
