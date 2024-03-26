@@ -1,3 +1,4 @@
+import pickle
 from datetime import datetime
 import sqlite3
 
@@ -9,7 +10,7 @@ class UserFiles:
             Owner TEXT NOT NULL,
             Name TEXT NOT NULL,
             Size INTEGER NOT NULL,
-            Date TEXT NOT NULL,
+            Date BLOB NOT NULL,
             Favorite INTEGER DEFAULT 0,
             FileBytes BLOB
         );
@@ -62,8 +63,18 @@ class UserFiles:
             return self.cur.execute(query).fetchall()
 
     def insert_file(self, name: str, size: int, date: datetime, filebytes: bytes):
-        self._execute_query(self.INSERT_FILE_QUERY, (self.userid_db, name, size, date, filebytes))
+        encoded_date = pickle.dumps(date)  # Serialize datetime object to bytes
+        self._execute_query(self.INSERT_FILE_QUERY, (self.userid_db, name, size, encoded_date, filebytes))
         self.conn.commit()
+
+    def get_all_data(self):
+        all_details = self._execute_query(self.GET_ALL_DATA_QUERY, (self.userid_db,))
+        formatted_details = []
+        for detail in all_details:
+            name, size, date_blob, favorite = detail
+            date = pickle.loads(date_blob)  # Deserialize bytes to datetime object
+            formatted_details.append((name, size, date, favorite))
+        return formatted_details if formatted_details else "<NO_DATA>"
 
     def delete_file(self, name: str):
         self._execute_query(self.REMOVE_FILE_QUERY, (self.userid_db, name))
@@ -80,10 +91,6 @@ class UserFiles:
     def get_file_size(self, file_name: str) -> int:
         size = self._execute_query(self.GET_FILE_SIZE_QUERY, (self.userid_db, file_name))
         return size[0] if size else None
-
-    def get_all_data(self):
-        all_details = self._execute_query(self.GET_ALL_DATA_QUERY, (self.userid_db,))
-        return all_details if all_details is not None else "<NO_DATA>"
 
     def get_favorite_status(self, file_name: str) -> int:
         status = self._execute_query(self.GET_FAVORITE_STATUS_QUERY, (self.userid_db, file_name))

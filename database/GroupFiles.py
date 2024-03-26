@@ -1,5 +1,7 @@
+import pickle
 from datetime import datetime
 import sqlite3
+
 
 
 class GroupFiles:
@@ -9,7 +11,7 @@ class GroupFiles:
             Owner TEXT NOT NULL,
             Name TEXT NOT NULL,
             Size INTEGER NOT NULL,
-            Date TEXT NOT NULL,
+            Date BLOB NOT NULL,
             GroupName TEXT NOT NULL,
             FileBytes BLOB NOT NULL
         );
@@ -58,8 +60,18 @@ class GroupFiles:
             return self.cur.execute(query).fetchall()
 
     def insert_file(self, name: str, size: int, date: datetime, group_name: str, filebytes: bytes):
-        self._execute_query(self.INSERT_FILE_QUERY, (self.owner_id, name, size, date, group_name, filebytes))
+        encoded_date = pickle.dumps(date)  # Serialize datetime object to bytes
+        self._execute_query(self.INSERT_FILE_QUERY, (self.owner_id, name, size, encoded_date, group_name, filebytes))
         self.conn.commit()
+
+    def get_all_files_from_group(self, group_name: str):
+        all_files = self._execute_query(self.GET_ALL_FILES_FROM_GROUP_QUERY, (group_name,))
+        formatted_files = []
+        for file_info in all_files:
+            owner, name, size, date_blob, group_name = file_info
+            date = pickle.loads(date_blob)  # Deserialize bytes to datetime object
+            formatted_files.append((owner, name, size, date, group_name))
+        return formatted_files
 
     def delete_file(self, group_name: str, name: str):
         self._execute_query(self.REMOVE_FILE_QUERY, (group_name, self.owner_id, name))
@@ -80,6 +92,3 @@ class GroupFiles:
         else:
             # Handle the case where no matching records are found
             return None  # or raise an exception or return a default value
-
-    def get_all_files_from_group(self, group_name: str):
-        return self._execute_query(self.GET_ALL_FILES_FROM_GROUP_QUERY, (group_name,))
