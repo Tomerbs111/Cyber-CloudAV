@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="b37a7d79-a547-4a2d-9a7e-e9b91f6e409e" name="Changes" comment="page resizes as needed">
+      <change beforePath="$PROJECT_DIR$/GUI/GroupsPage.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/GroupsPage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GUI/HomePage.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/HomePage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/GroupFiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/GroupFiles.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/UserFiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/UserFiles.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/User_info.db" beforeDir="false" afterPath="$PROJECT_DIR$/database/User_info.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/group_server_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/group_server_test.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <favorite-branches>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="2FA" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </favorite-branches>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="2FA" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Tomerbs111&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="selectedUrlAndAccountId">
+      <UrlAndAccount>
+        <option name="accountId" value="84b85230-3470-48e9-8d98-e828946e2556" />
+        <option name="url" value="https://github.com/Tomerbs111/Cyber-CloudAV.git" />
+      </UrlAndAccount>
+    </option>
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/GUI/HomePage.py" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="QODANA_PROBLEMS_VIEW_TAB" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
+  <component name="ProjectId" id="2bx7DJW3radhjI5Vw1OeTfCW76v" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.client.executor&quot;: &quot;Run&quot;,
+    &quot;Python.group_client_test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.group_server_test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.server.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;improving-gui&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/User/OneDrive - פורטל החינוך פתח תקווה/שולחן העבודה/Cyber-CloudAV&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\shoon\OneDrive - פורטל החינוך פתח תקווה\שולחן העבודה\Cyber-CloudAV\GUI" />
+      <recent name="C:\Users\shoon\OneDrive - פורטל החינוך פתח תקווה\שולחן העבודה\Cyber-CloudAV" />
+      <recent name="C:\Users\shoon\OneDrive - פורטל החינוך פתח תקווה\שולחן העבודה\Cyber-CloudAV\GUI\file_icons" />
+      <recent name="C:\Users\shoon\OneDrive - פורטל החינוך פתח תקווה\שולחן העבודה\Cyber-CloudAV\client" />
+      <recent name="C:\Users\shoon\OneDrive - פורטל החינוך פתח תקווה\שולחן העבודה\Cyber-CloudAV\server" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.group_client_test (1)">
+    <configuration name="MyApp" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Cyber CloudAV" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/GUI" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/GUI/MyApp.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="client" type="PythonConfigurationType" factoryName="Python" singleton="false" temporary="true" nameIsGenerated="true">
+      <module name="Cyber CloudAV" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/client" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/client/client.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="group_client_test (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Cyber CloudAV" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/group_client_test.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="group_client_test" type="PythonConfigurationType" factoryName="Python" singleton="false" temporary="true" nameIsGenerated="true">
+      <module name="Cyber CloudAV" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/group_client_test.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="group_client_test" type="PythonConfigurationType" factoryName="Python" singleton="false" temporary="true" nameIsGenerated="true">
+      <module name="Cyber CloudAV" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/group_client_test.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="group_server_test (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Cyber CloudAV" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/group_server_test.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="server" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Cyber CloudAV" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/server" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/server/server.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.group_client_test" />
+      <item itemvalue="Python.group_client_test (1)" />
+      <item itemvalue="Python.MyApp" />
+      <item itemvalue="Python.group_server_test (1)" />
+      <item itemvalue="Python.client" />
+      <item itemvalue="Python.server" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.group_client_test (1)" />
+        <item itemvalue="Python.client" />
+        <item itemvalue="Python.server" />
+        <item itemvalue="Python.group_server_test (1)" />
+        <item itemvalue="Python.MyApp" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-50da183f06c8-d3b881c8e49f-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-233.13135.95" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b37a7d79-a547-4a2d-9a7e-e9b91f6e409e" name="Changes" comment="" />
+      <created>1707144756283</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1707144756283</updated>
+    </task>
+    <task id="LOCAL-00001" summary="gnhhjgjfh">
+      <option name="closed" value="true" />
+      <created>1707171832569</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1707171832569</updated>
+    </task>
+    <task id="LOCAL-00002" summary="added all the features">
+      <option name="closed" value="true" />
+      <created>1707472259185</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1707472259185</updated>
+    </task>
+    <task id="LOCAL-00003" summary="added all the features">
+      <option name="closed" value="true" />
+      <created>1707472380049</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1707472380049</updated>
+    </task>
+    <task id="LOCAL-00004" summary="added all the features">
+      <option name="closed" value="true" />
+      <created>1707472558997</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1707472558997</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Deleted DB_function.py (no use).&#10;&#10;Created group_client_test.py and group_server_test.py for group testing.&#10;&#10;Initialized GroupRoom.py &amp; GroupUser.py with all their fields.&#10;&#10;Redesigned server.py layout with class implementation.&#10;&#10;Database changes in testing and the rest are minor changes.">
+      <option name="closed" value="true" />
+      <created>1707477028107</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1707477028107</updated>
+    </task>
+    <task id="LOCAL-00006" summary="edited the gui">
+      <option name="closed" value="true" />
+      <created>1707674055425</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1707674055425</updated>
+    </task>
+    <task id="LOCAL-00007" summary="edited the gui">
+      <option name="closed" value="true" />
+      <created>1707680645601</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1707680645601</updated>
+    </task>
+    <task id="LOCAL‎-00008" summary="edited the gui">
+      <option name="closed" value="true" />
+      <created>1707743635722</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL‎-00008" />
+      <option name="project" value="LOCAL‎" />
+      <updated>1707743635722</updated>
+    </task>
+    <task id="LOCAL-00009" summary="now broadcast works">
+      <option name="closed" value="true" />
+      <created>1708192532911</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1708192532911</updated>
+    </task>
+    <task id="LOCAL-00010" summary="now broadcast works">
+      <option name="closed" value="true" />
+      <created>1708194289672</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1708194289672</updated>
+    </task>
+    <task id="LOCAL-00011" summary="now broadcast doesnt stuck gui">
+      <option name="closed" value="true" />
+      <created>1708254893973</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1708254893973</updated>
+    </task>
+    <task id="LOCAL-00012" summary="now broadcast doesnt stuck gui">
+      <option name="closed" value="true" />
+      <created>1708259914882</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1708259914882</updated>
+    </task>
+    <task id="LOCAL‎-00013" summary="now broadcast doesnt stuck gui">
+      <option name="closed" value="true" />
+      <created>1708341453586</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL‎-00013" />
+      <option name="project" value="LOCAL‎" />
+      <updated>1708341453587</updated>
+    </task>
+    <task id="LOCAL-00014" summary="now broadcast doesnt stuck gui">
+      <option name="closed" value="true" />
+      <created>1708425226735</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1708425226735</updated>
+    </task>
+    <task id="LOCAL-00015" summary="now groups are seperated">
+      <option name="closed" value="true" />
+      <created>1709489165164</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1709489165164</updated>
+    </task>
+    <task id="LOCAL-00016" summary="now groups are seperated">
+      <option name="closed" value="true" />
+      <created>1709900807413</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1709900807413</updated>
+    </task>
+    <task id="LOCAL-00017" summary="organized">
+      <option name="closed" value="true" />
+      <created>1709901745082</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1709901745082</updated>
+    </task>
+    <task id="LOCAL-00018" summary="organized">
+      <option name="closed" value="true" />
+      <created>1709903338029</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1709903338029</updated>
+    </task>
+    <task id="LOCAL-00019" summary="organized">
+      <option name="closed" value="true" />
+      <created>1710330048059</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1710330048059</updated>
+    </task>
+    <task id="LOCAL-00020" summary="page resizes as needed">
+      <option name="closed" value="true" />
+      <created>1710333285941</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1710333285941</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="master" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="2FA" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="master" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="gnhhjgjfh" />
+    <MESSAGE value="added all the features" />
+    <MESSAGE value="Deleted DB_function.py (no use).&#10;&#10;Created group_client_test.py and group_server_test.py for group testing.&#10;&#10;Initialized GroupRoom.py &amp; GroupUser.py with all their fields.&#10;&#10;Redesigned server.py layout with class implementation.&#10;&#10;Database changes in testing and the rest are minor changes." />
+    <MESSAGE value="edited the gui" />
+    <MESSAGE value="now broadcast works" />
+    <MESSAGE value="now broadcast doesnt stuck gui" />
+    <MESSAGE value="now groups are seperated" />
+    <MESSAGE value="organized" />
+    <MESSAGE value="page resizes as needed" />
+    <option name="LAST_COMMIT_MESSAGE" value="page resizes as needed" />
+  </component>
+</project>
