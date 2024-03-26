@@ -4,7 +4,7 @@ from tkinter import filedialog as fd
 import ttkbootstrap as ttk
 from customtkinter import *
 from PIL import Image, ImageTk
-from datetime import date
+import datetime
 
 
 class GroupFileFrame(ttk.Frame):
@@ -200,11 +200,29 @@ class GroupsPage(ttk.Frame):
         else:
             return f"{file_size_bytes / (1024 ** 3):.2f} GB"
 
-    def set_frame_properties_for_display(self, file_name, file_bytes, file_uploadate: date):
-        short_filename = os.path.basename(file_name)
-        formatted_file_size = self.set_size_format(file_bytes)
+    def set_date_format(self, file_uploadate: datetime):
+        time_difference = datetime.datetime.now() - file_uploadate
 
-        short_file_date = file_uploadate.strftime('%B %d, %Y')
+        # Calculate the time difference in minutes
+        minutes_difference = int(time_difference.total_seconds() / 60)
+
+        # Format the short date string based on the time difference
+        if minutes_difference < 60:
+            short_file_date = f"{minutes_difference} minute ago"
+        elif minutes_difference < 24 * 60:
+            short_file_date = f"{minutes_difference // 60} hours ago"
+        elif minutes_difference < 24 * 60 * 7:
+            short_file_date = f"{minutes_difference // (24 * 60)}d"
+        else:
+            short_file_date = file_uploadate.strftime('%B %d, %Y')
+
+        return short_file_date
+
+    def set_frame_properties_for_display(self, file_name, file_bytes, file_uploadate: datetime):
+        short_filename = os.path.basename(file_name)
+
+        formatted_file_size = self.set_size_format(file_bytes)
+        short_file_date = self.set_date_format(file_uploadate)
 
         return short_filename, formatted_file_size, short_file_date
 
@@ -245,8 +263,9 @@ class GroupsPage(ttk.Frame):
         for individual_file in received_data:
             owner, name, size, date, group_name = individual_file
 
-            formatted_file_size = self.set_size_format(size)  # a func from Gui_CAV.py
-            self.add_file_frame(name, formatted_file_size, date, owner)  # a func from Gui_CAV.py
+            formatted_file_size = self.set_size_format(size)
+            formatted_file_date = self.set_date_format(date)
+            self.add_file_frame(name, formatted_file_size, formatted_file_date, owner)  # a func from Gui_CAV.py
 
     def handle_send_file_request(self):
         filetypes = (
@@ -261,14 +280,14 @@ class GroupsPage(ttk.Frame):
             filetypes=filetypes)
 
         file_bytes = os.path.getsize(file_name)
-        file_date = date.today()
+        file_date = datetime.datetime.now()
 
         short_filename, formatted_file_size, short_file_date = \
             self.set_frame_properties_for_display(file_name, file_bytes, file_date)
 
         send_file_thread = threading.Thread(
             target=self.group_communicator.handle_send_file_request,
-            args=(file_name, short_filename, short_file_date, file_bytes)
+            args=(file_name, short_filename, file_date, file_bytes)
         )
         send_file_thread.start()
 

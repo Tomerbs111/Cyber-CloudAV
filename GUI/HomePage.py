@@ -1,12 +1,13 @@
 import threading
 from tkinter import filedialog as fd
-from datetime import date
 import customtkinter
 import ttkbootstrap as ttk
 from customtkinter import *
 from PIL import Image, ImageTk
 
 from GUI.GroupsPage import GroupsPage
+import datetime
+
 
 
 class FileFrame(ttk.Frame):
@@ -176,6 +177,9 @@ class HomePage(ttk.Frame):
         self.file_frame_counter = 0
         self.save_path = os.path.join(os.path.expanduser("~"), "Downloads")
         self.rename_button = None
+        self.delete_button = None
+
+        self.name_sort_order = 'ascending'  # Keep track of the current sorting order
 
         self.setup_file_actions_frame()
 
@@ -244,7 +248,7 @@ class HomePage(ttk.Frame):
         f_file_properties = CTkFrame(master=combined_frame, fg_color='transparent')
         f_file_properties.place(relx=0, rely=0, relwidth=1, relheight=0.08)
 
-        CTkButton(master=f_file_properties, text="Name").pack(side='left', padx=5)
+        CTkButton(master=f_file_properties, text="Name", command=self.sort_by_name).pack(side='left', padx=5)
         CTkButton(master=f_file_properties, text="Size").pack(side='right', padx=10)
         CTkButton(master=f_file_properties, text="Upload date").pack(side='right', padx=10)
 
@@ -252,6 +256,20 @@ class HomePage(ttk.Frame):
 
         self.f_file_list = CTkScrollableFrame(master=combined_frame, fg_color='transparent')
         self.f_file_list.place(relx=0, rely=0.09, relwidth=1, relheight=0.91)
+
+    def sort_by_name(self):
+        # Toggle the sorting order
+        if self.name_sort_order == 'ascending':
+            self.file_frames.sort(key=lambda x: x.get_filename().lower())
+            self.name_sort_order = 'descending'
+        else:
+            self.file_frames.sort(key=lambda x: x.get_filename().lower(), reverse=True)
+            self.name_sort_order = 'ascending'
+
+        # Re-pack the file frames in the scrollable frame
+        for file_frame in self.file_frames:
+            file_frame.pack_forget()
+            file_frame.pack(expand=True, fill='x', side='top')
     @staticmethod
     def set_size_format(file_size_bytes):
         if file_size_bytes < 1024:
@@ -262,11 +280,29 @@ class HomePage(ttk.Frame):
             return f"{file_size_bytes / (1024 ** 2):.2f} MB"
         else:
             return f"{file_size_bytes / (1024 ** 3):.2f} GB"
-    def set_frame_properties_for_display(self, file_name, file_bytes, file_uploadate: date):
-        short_filename = os.path.basename(file_name)
-        formatted_file_size = self.set_size_format(file_bytes)
 
-        short_file_date = file_uploadate.strftime('%B %d, %Y')
+    def set_date_format(self, file_uploadate: datetime):
+        time_difference = datetime.datetime.now() - file_uploadate
+
+        # Calculate the time difference in minutes
+        minutes_difference = int(time_difference.total_seconds() / 60)
+
+        # Format the short date string based on the time difference
+        if minutes_difference < 60:
+            short_file_date = f"{minutes_difference} minute ago"
+        elif minutes_difference < 24 * 60:
+            short_file_date = f"{minutes_difference // 60} hours ago"
+        elif minutes_difference < 24 * 60 * 7:
+            short_file_date = f"{minutes_difference // (24 * 60)}d"
+        else:
+            short_file_date = file_uploadate.strftime('%B %d, %Y')
+
+        return short_file_date
+    def set_frame_properties_for_display(self, file_name, file_bytes, file_uploadate: datetime):
+        short_filename = os.path.basename(file_name)
+
+        formatted_file_size = self.set_size_format(file_bytes)
+        short_file_date = self.set_date_format(file_uploadate)
 
         return short_filename, formatted_file_size, short_file_date
     def get_checked_file_frames(self):
@@ -295,8 +331,10 @@ class HomePage(ttk.Frame):
         for individual_file in narf_answer:
             (file_name, file_bytes, file_date, favorite) = individual_file
 
-            formatted_file_size = self.set_size_format(file_bytes)  # a func from Gui_CAV.py
-            self.add_file_frame(file_name, formatted_file_size, file_date, favorite)  # a func from Gui_CAV.py
+            formatted_file_date = self.set_date_format(file_date)
+            formatted_file_size = self.set_size_format(file_bytes)
+            self.add_file_frame(file_name, formatted_file_size, formatted_file_date, favorite)
+
     def handle_send_file_request(self):
         try:
             filetypes = (
@@ -311,13 +349,13 @@ class HomePage(ttk.Frame):
                 filetypes=filetypes)
 
             file_bytes = os.path.getsize(file_name)
-            file_date = date.today()
+            file_date = datetime.datetime.now()
 
             short_filename, formatted_file_size, short_file_date = \
                 self.set_frame_properties_for_display(file_name, file_bytes, file_date)
 
             send_file_thread = threading.Thread(
-                target=self.client_communicator.handle_send_file_request(file_name, short_filename, short_file_date,
+                target=self.client_communicator.handle_send_file_request(file_name, short_filename, file_date,
                                                                          file_bytes))
             send_file_thread.start()
 
