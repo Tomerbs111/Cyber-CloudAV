@@ -1,3 +1,6 @@
+import secrets
+import smtplib
+import string
 import threading
 from tkinter import filedialog as fd
 from datetime import datetime
@@ -14,14 +17,13 @@ from tkvideo import tkvideo
 
 
 class TwoFactorAuthentication(CTkToplevel):
-    def __init__(self, master, email, username, password):
+    def __init__(self, master, email):
         super().__init__(master)
         self.master = master
         self.email = email
-        self.username = username
-        self.password = password
         self.email = email
 
+        self.verification_pass = self.send_email(self.email)
         self.setup_image()
         self.setup_information()
         self.setup_verification_code_frame()
@@ -41,9 +43,11 @@ class TwoFactorAuthentication(CTkToplevel):
     def setup_information(self):
         container = CTkFrame(master=self)
         container.pack(side="top", fill="both", padx=20)
-        CTkLabel(container, text="Two-Factor\nAuthentication", font=("Arial Bold", 30), bg_color='transparent').pack(side="top", anchor="center", pady=30)
-        CTkLabel(container, text="Enter the six-digit code we have sent to your email", font=("Helvetica", 12), bg_color='transparent').pack(side="top",
-                                                                                              anchor="center", pady=10)
+        CTkLabel(container, text="Two-Factor\nAuthentication", font=("Arial Bold", 30), bg_color='transparent').pack(
+            side="top", anchor="center", pady=30)
+        CTkLabel(container, text="Enter the six-digit code we have sent to your email", font=("Helvetica", 12),
+                 bg_color='transparent').pack(side="top",
+                                              anchor="center", pady=10)
 
     def setup_verification_code_frame(self):
         code_frame = CTkFrame(self)
@@ -63,9 +67,6 @@ class TwoFactorAuthentication(CTkToplevel):
         if event.char.isdigit() and index < 5:
             self.code_entries[index + 1].focus_set()
 
-        if index == 5:
-            self.on_submit()
-
     def setup_submit_button(self):
         container_frame = CTkFrame(self)
         container_frame.pack(side="bottom", fill="both", padx=20, pady=20)
@@ -75,17 +76,36 @@ class TwoFactorAuthentication(CTkToplevel):
         self.answer_label = CTkLabel(container_frame, text="", text_color="red")
 
     def on_submit(self):
-        print("Submitting code")
+        if self.code_entries == self.verification_pass:
+            print("gay")
+
+    def send_email(self, u_email):
+        characters = string.digits
+
+        # Generate a random password of the specified length
+        password = ''.join(secrets.choice(characters) for i in range(6))
+        try:
+            server = smtplib.SMTP('smtp.gmail.com:587')
+            server.ehlo()
+            server.starttls()
+            server.login('cloudav03@gmail.com', 'CloudAV1234')
+            message = f'Subject: makore msg\n\nyour password is {password}'
+            server.sendmail('makore616@gmail.com', u_email, message)
+            # server.quit()
+            print("Email sent successfully!")
+
+            return password
+        except Exception as e:
+            print(e)
+            print("Email failed to send.")
 
 
 def run_test():
     root = tk.Tk()
-    email = "test@example.com"
-    username = "test_user"
-    password = "test_password"
+    email = "chairgood1@gmail.com"
 
     # Create an instance of TwoFactorAuthentication
-    two_factor_auth = TwoFactorAuthentication(root, email, username, password)
+    two_factor_auth = TwoFactorAuthentication(root, email)
 
     # Run the Tkinter main loop
     root.mainloop()
