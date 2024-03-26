@@ -360,7 +360,7 @@ class MyApp(ttk.Window):
 
         elif frame_class == "GroupsPage":
             new_frame = GroupsPage(self.page.f_current_page, self.switch_frame, self.group_communicator,
-                                   group_name=args[0], permissions=args[1])
+                                   group_name=args[1], permissions=args[2])
 
             if self.current_frame:
                 self.current_frame.pack_forget()

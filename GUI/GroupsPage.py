@@ -139,8 +139,13 @@ class GroupsPage(ttk.Frame):
         self.setup_group_file_actions_frame()
 
     def setup_group_file_actions_frame(self):
+        name_frame = ttk.Frame(master=self)
+        name_frame.place(relx=0, rely=0, relwidth=1, relheight=0.05)
+
+        CTkLabel(name_frame, text=self.group_name, font=('Arial Bold', 20)).pack(side='top',expand=True, anchor='w', padx=5)
+
         f_action = ttk.Frame(master=self)
-        f_action.place(relx=0, rely=0, relwidth=1, relheight=0.05)
+        f_action.place(relx=0, rely=0.05, relwidth=1, relheight=0.05)
 
         delete_button = CTkButton(
             master=f_action,
@@ -176,7 +181,7 @@ class GroupsPage(ttk.Frame):
         self.rename_button.pack(side='left', padx=5)
 
         combined_frame = CTkFrame(master=self)
-        combined_frame.place(relx=0, rely=0.05, relwidth=1, relheight=0.95)
+        combined_frame.place(relx=0, rely=0.1, relwidth=1, relheight=0.95)
 
         f_file_properties = CTkFrame(master=combined_frame, fg_color='transparent')
         f_file_properties.place(relx=0, rely=0, relwidth=1, relheight=0.08)
